@@ -1,0 +1,6 @@
+{
+  "name": "AddProduct",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./AddProduct.js"
+}
