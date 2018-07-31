@@ -17,7 +17,7 @@ export default {
         {
           name: 'Productos',
           url: '/Products/AddProduct',
-          icon: 'icon-grid',
+          icon: 'icon-social-dropbox',
         }
       ],
     },

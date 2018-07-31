@@ -35,11 +35,11 @@ import {
 } from "reactstrap";
 import { connect } from "react-redux";
 import {
-  getItems,
+  getItemsPresentations,
   addItem,
   deleteItem,
   updateItem
-} from "../../actions/itemAction";
+} from "../../actions/presentationAction";
 import PropTypes from "prop-types";
 import { presentation } from "../../actions/types";
 
@@ -63,8 +63,8 @@ class Presentation extends Component {
     this.onEditClick = this.onEditClick.bind(this);
   }
 
-  componentDidMount() {    
-    this.props.getItems(presentation);    
+  componentDidMount() {
+    this.props.getItemsPresentations(presentation);
   }
 
   toggle() {
@@ -93,7 +93,7 @@ class Presentation extends Component {
       this.props.addItem(newItem, presentation);
     } else {
       this.props.updateItem(this.state._id, newItem, presentation);
-      this.props.getItems(presentation);
+      this.props.getItemsPresentations(presentation);
       this.onCancelClick();
     }
 
@@ -294,7 +294,7 @@ class Presentation extends Component {
 }
 
 Presentation.PropTypes = {
-  getItems: PropTypes.func.isRequired,
+  getItemsPresentations: PropTypes.func.isRequired,
   addItems: PropTypes.func.isRequired,
   item: PropTypes.object.isRequired
 };
@@ -305,5 +305,5 @@ const mapStateToProps = state => ({
 
 export default connect(
   mapStateToProps,
-  { getItems, addItem, deleteItem, updateItem }
-)(Presentation); 
+  { getItemsPresentations, addItem, deleteItem, updateItem }
+)(Presentation);

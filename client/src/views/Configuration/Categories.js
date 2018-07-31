@@ -35,11 +35,11 @@ import {
 } from "reactstrap";
 import { connect } from "react-redux";
 import {
-  getItems,
+  getItemsCategories,
   addItem,
   deleteItem,
   updateItem
-} from "../../actions/itemAction";
+} from "../../actions/categoryAction";
 import PropTypes from "prop-types";
 import { categories } from "../../actions/types";
 
@@ -64,7 +64,7 @@ class Categories extends Component {
   }
 
   componentDidMount() {
-    this.props.getItems(categories);
+    this.props.getItemsCategories(categories);
   }
 
   toggle() {
@@ -93,7 +93,7 @@ class Categories extends Component {
       this.props.addItem(newItem, categories);
     } else {
       this.props.updateItem(this.state._id, newItem, categories);
-      this.props.getItems(categories);
+      this.props.getItemsCategories(categories);
       this.onCancelClick();
     }
 
@@ -178,7 +178,7 @@ class Categories extends Component {
                     <Form className="was-validated" onSubmit={this.onSubmit}>
                       <FormGroup>
                         <Label htmlFor="name">
-                          <strong>Tipo Categoria</strong>                          
+                          <strong>Tipo Categoria</strong>
                         </Label>
                         <Input
                           type="text"
@@ -200,7 +200,7 @@ class Categories extends Component {
                         <Input
                           type="textarea"
                           name="description"
-                          id="description"                          
+                          id="description"
                           onChange={this.onChange}
                           className="form-control-warning"
                           value={this.state.description}
@@ -289,16 +289,16 @@ class Categories extends Component {
 }
 
 Categories.PropTypes = {
-  getItems: PropTypes.func.isRequired,
+  getItemsCategories: PropTypes.func.isRequired,
   addItems: PropTypes.func.isRequired,
   item: PropTypes.object.isRequired
 };
 
 const mapStateToProps = state => ({
-  item: state.item
+  item: state.category
 });
 
 export default connect(
   mapStateToProps,
-  { getItems, addItem, deleteItem, updateItem }
-)(Categories); 
+  { getItemsCategories, addItem, deleteItem, updateItem }
+)(Categories);

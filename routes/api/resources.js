@@ -9,6 +9,11 @@ router.get("/", (req, res) => {
     .then(presentation => res.json(presentation));
 });
 
+router.get("/:id", (req, res) => {
+  Presentation.findById(req.params.id)
+    .then(presentation => res.json(presentation));
+});
+
 router.post("/", (req, res) => {
   let newPresentation = new Presentation({
     name: req.body.name,

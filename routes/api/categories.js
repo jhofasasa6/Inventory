@@ -5,7 +5,11 @@ const Categories = require("../../models/categories");
 
 router.get("/", (req, res) => {
   Categories.find()
-    .sort({ data: -1 })
+    .then(categories => res.json(categories));
+});
+
+router.get("/:id", (req, res) => {
+  Categories.findById(req.params.id)
     .then(categories => res.json(categories));
 });
 
@@ -19,13 +23,13 @@ router.post("/", (req, res) => {
 });
 
 router.put("/:id", (req, resp) => {
-  let categorie = {};
-  categorie.name = req.body.name;
-  categorie.description = req.body.description;
+  let categories = {};
+  categories.name = req.body.name;
+  categories.description = req.body.description;
 
   let qurery = { _id: req.params.id };
 
-  Categories.update(qurery, categorie, err => {
+  Categories.update(qurery, categories, err => {
     if (err) {
       console.log(err);
     }
