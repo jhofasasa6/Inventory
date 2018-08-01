@@ -10,34 +10,45 @@ export default {
       }
     },
     {
-      name: 'Opciones',
-      url: '/notifications',
-      icon: 'icon-options',
+      name: "Inventario",
+      url: "/Inventory",
+      icon: "icon-directions",
       children: [
         {
-          name: 'Productos',
-          url: '/Products/AddProduct',
-          icon: 'icon-social-dropbox',
-        }
-      ],
-    },
-    {
-      name: 'Configuraciones',
-      url: '/Configuration',
-      icon: 'icon-wrench',
-      children: [
-        {
-          name: '   Presentación',
-          url: '/Configuration/Presentation',
-          icon: 'icon-grid',
+          name: "Entradas",
+          url: "/Inventory/input",
+          icon: "icon-login"
         },
         {
-          name: '   Categorias',
-          url: '/Configuration/Categories',
-          icon: 'icon-tag',
+          name: "Salidas",
+          url: "/Inventory/output",
+          icon: "icon-logout"
         }
-      ],
+      ]
     },
+    {
+      name: "Configuraciones",
+      url: "/Configuration",
+      icon: "icon-wrench",
+      children: [
+        {
+          name: "   Presentación",
+          url: "/Configuration/Presentation",
+          icon: "icon-grid"
+        },
+        {
+          name: "   Categorias",
+          url: "/Configuration/Categories",
+          icon: "icon-tag"
+        },
+        {
+          name: "Productos",
+          url: "/Products/AddProduct",
+          icon: "icon-social-dropbox"
+        }
+      ]
+    }
+    /* ,
     {
       title: true,
       name: "Theme",
@@ -284,7 +295,7 @@ export default {
           icon: "icon-star"
         }
       ]
-    } /* ,
+    }*/,
     {
       name: 'Download CoreUI',
       url: 'http://coreui.io/react/',
@@ -297,6 +308,6 @@ export default {
       url: 'http://coreui.io/pro/react/',
       icon: 'icon-layers',
       variant: 'danger',
-    }, */
+    }, 
   ]
 };

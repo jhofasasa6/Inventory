@@ -1,29 +1,17 @@
 import React, { Component } from "react";
 import {
-  Badge,
   Button,
-  ButtonDropdown,
   Card,
   CardBody,
-  CardFooter,
   CardHeader,
   Col,
   Collapse,
-  DropdownItem,
-  DropdownMenu,
-  DropdownToggle,
   Fade,
   Form,
   FormGroup,
-  FormText,
-  FormFeedback,
   Input,
-  InputGroup,
-  InputGroupAddon,
-  InputGroupText,
   Label,
   Row,
-  Container,
   Modal,
   ModalHeader,
   ModalBody,
@@ -38,7 +26,8 @@ import { getItemsCategories } from "../../actions/categoryAction";
 import {
   addItem,
   getItemsProducts,
-  updateItem
+  updateItem,
+  deleteItem
 } from "../../actions/productAction";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
@@ -62,10 +51,15 @@ class AddProduct extends Component {
       idCategory: "",
       nameProduct: "",
       idCodProduct: "",
-      error: "",
+      message: "",
       edit: false,
-      productEditId: ""
+      productEditId: "",
+      headerModal: "",
+      status: "primary",
+      deleteId: ""
     };
+
+    this.deleteProduct = this.deleteProduct.bind(this);
   }
 
   componentDidMount() {
@@ -110,8 +104,11 @@ class AddProduct extends Component {
     }
 
     if (errors.length > 0) {
-      this.state.error = errors.map((error, i) => <p key={i}>{error}</p>);
+      this.state.message = errors.map((error, i) => <p key={i}>{error}</p>);
       this.setState({ modal: !this.state.modal });
+      this.setState({
+        headerModal: ".:: Se presentarion los siguientes errores ::."
+      });
       return;
     }
 
@@ -130,6 +127,7 @@ class AddProduct extends Component {
     } else {
       this.props.updateItem(this.state.productEditId, newItem, products);
       this.props.getItemsProducts(products);
+      this.setState({ edit: !this.state.edit });
     }
     this.defaultValues();
   };
@@ -139,8 +137,7 @@ class AddProduct extends Component {
     this.setState({ idCodProduct: "" });
     this.setState({ idPresentation: "" });
     this.setState({ idCategory: "" });
-    this.setState({ productEditId: "" });
-    this.setState({ edit: !this.state.edit });
+    this.setState({ productEditId: "" });    
   }
 
   onEditClick(_id) {
@@ -151,6 +148,19 @@ class AddProduct extends Component {
     this.setState({ idPresentation: product.presentation._id });
     this.setState({ idCategory: product.category._id });
     this.setState({ productEditId: product._id });
+  }
+
+  onDeleteClick(_id) {
+    this.setState({ modal: !this.state.modal });
+    this.setState({ headerModal: ".:: ? ::." });
+    this.setState({ status: "danger" });
+    this.setState({ deleteId: _id });
+    this.state.message = <p>Desea eliminar este producto?</p>;
+  }
+
+  deleteProduct() {
+    this.props.deleteItem(this.state.deleteId, products);
+    this.setState({ modal: !this.state.modal });
   }
 
   render() {
@@ -165,12 +175,15 @@ class AddProduct extends Component {
           className={this.props.className}
         >
           <ModalHeader toggle={this.toggleModal}>
-            Se presentarion los siguientes errores
+            {this.state.headerModal}
           </ModalHeader>
-          <ModalBody>{this.state.error}</ModalBody>
+          <ModalBody>{this.state.message}</ModalBody>
           <ModalFooter>
-            <Button color="secondary" onClick={this.toggleModal}>
+            <Button color={this.state.status} onClick={this.deleteProduct}>
               Aceptar
+            </Button>
+            <Button color="secondary" onClick={this.toggleModal}>
+              Cancelar
             </Button>
           </ModalFooter>
         </Modal>
@@ -337,7 +350,7 @@ class AddProduct extends Component {
                               <i className="fa fa-edit" />
                             </Button>{" "}
                             <Button
-                              //onClick={this.onShowModalClick.bind(this, _id)}
+                              onClick={this.onDeleteClick.bind(this, _id)}
                               size="sm"
                               color="danger"
                               tooltip="Eliminar"
@@ -389,6 +402,7 @@ AddProduct.PropTypes = {
   getItems: PropTypes.func.isRequired,
   addItem: PropTypes.func.isRequired,
   getItemsProducts: PropTypes.func.isRequired,
+  deleteItem: PropTypes.func.isRequired,
   updateItem: PropTypes.func.isRequired,
   item: PropTypes.object.isRequired,
   category: PropTypes.object.isRequired,
@@ -408,6 +422,7 @@ export default connect(
     getItemsCategories,
     addItem,
     getItemsProducts,
-    updateItem
+    updateItem,
+    deleteItem
   }
 )(AddProduct);

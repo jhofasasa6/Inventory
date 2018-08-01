@@ -197,6 +197,16 @@ const Categories = Loadable({
   loading: Loading,
 });
 
+const InputProducts = Loadable({
+  loader: () => import('./views/Inventory/input'),
+  loading: Loading,
+});
+
+const Output = Loadable({
+  loader: () => import('./views/Inventory/output'),
+  loading: Loading,
+});
+
 
 
 
@@ -243,9 +253,11 @@ const routes = [
   { path: '/charts', name: 'Charts', component: Charts },
   { path: '/users', exact: true,  name: 'Users', component: Users },
   { path: '/users/:id', exact: true, name: 'User Details', component: User },
-  { path: '/Products/AddProduct', exact: true, name: 'User Details', component: AddProduct },
+  { path: '/Products/AddProduct', exact: true, name: 'Productos', component: AddProduct },
   { path: '/Configuration/Presentation',exact: true, name: 'Presentación', component: Presentation },
-  { path: '/Configuration/Categories',exact: true, name: 'Categorias', component: Categories }
+  { path: '/Configuration/Categories',exact: true, name: 'Categorias', component: Categories },
+  { path: '/Inventory/input',exact: true, name: 'Entradas', component: InputProducts },
+  { path: '/Inventory/output',exact: true, name: 'Salidas', component: Output }
 ];
 
 export default routes;
