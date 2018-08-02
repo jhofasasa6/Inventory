@@ -35,7 +35,59 @@ const ProductSchema = Schema({
   },
   sku: {
     type: String
-  }
+  },
+  ActualAmount: {
+    type: Number,
+    require: true
+  },
+  Inputs: [
+    {
+      _id: {
+        type: String,
+        require: true
+      },
+      CreationDate: {
+        type: Date,
+        require: true
+      },
+      DescriptionInput: {
+        type: String,
+        require: true
+      },
+      Input: {
+        type: Number,
+        require: true
+      },
+      ActualAmount: {
+        type: Number,
+        require: true
+      }
+    }
+  ],
+  Outputs: [
+    {
+      _id: {
+        type: String,
+        require: true
+      },
+      CreationDate: {
+        type: Date,
+        require: true
+      },
+      DescriptionOutput: {
+        type: String,
+        require: true
+      },
+      Output: {
+        type: Number,
+        require: true
+      },
+      ActualAmount: {
+        type: Number,
+        require: true
+      }
+    }
+  ]
 });
 
 module.exports = Product = mongoose.model("Product", ProductSchema);

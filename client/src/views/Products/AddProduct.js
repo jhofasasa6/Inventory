@@ -34,6 +34,7 @@ import { connect } from "react-redux";
 import { presentation } from "../../actions/types";
 import { categories } from "../../actions/types";
 import { products } from "../../actions/types";
+import uuid from "uuid";
 
 class AddProduct extends Component {
   constructor(props) {
@@ -120,11 +121,32 @@ class AddProduct extends Component {
       category: this.props.category.items.find(
         x => x._id === this.state.idCategory
       ),
-      sku: this.state.idCodProduct
+      sku: this.state.idCodProduct,
+      ActualAmount: 0,
+      Inputs: {}
     };
     if (!this.state.edit) {
+      newItem.Inputs = [
+        {
+          _id: uuid(),
+          DescriptionInput: "Creación de Producto",
+          Input: 0,
+          CreationDate: Date.now(),
+          ActualAmount: 0
+        }
+      ];
+      console.log(newItem);
       this.props.addItem(newItem, products);
     } else {
+      newItem.Inputs = this.props.product.items.find(
+        x => x._id === this.state.productEditId
+      ).Inputs;
+      newItem.ActualAmount = this.props.product.items.find(
+        x => x._id === this.state.productEditId
+      ).ActualAmount;
+      console.log(this.props.product.items.find(
+        x => x._id === this.state.productEditId
+      ));
       this.props.updateItem(this.state.productEditId, newItem, products);
       this.props.getItemsProducts(products);
       this.setState({ edit: !this.state.edit });
@@ -137,7 +159,7 @@ class AddProduct extends Component {
     this.setState({ idCodProduct: "" });
     this.setState({ idPresentation: "" });
     this.setState({ idCategory: "" });
-    this.setState({ productEditId: "" });    
+    this.setState({ productEditId: "" });
   }
 
   onEditClick(_id) {
@@ -167,6 +189,7 @@ class AddProduct extends Component {
     const presentations = this.props.item.items;
     const categories = this.props.category.items;
     const products = this.props.product.items;
+
     return (
       <div className="animated fadeIn">
         <Modal
@@ -312,12 +335,15 @@ class AddProduct extends Component {
             </Fade>
           </Col>
         </Row>
-
-        <Row>
+        <Row
+          style={{
+            display: products.length > 0 ? "block" : "none"
+          }}
+        >
           <Col>
             <Card>
               <CardBody>
-                <Table hover bordered striped responsive size="sm">
+                <Table striped>
                   <thead>
                     <tr>
                       <th>Producto</th>
