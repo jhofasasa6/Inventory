@@ -22,7 +22,14 @@ export default {
         {
           name: "Salidas",
           url: "/Inventory/output",
-          icon: "icon-logout"
+          icon: "icon-logout",
+          children: [
+            {
+              name: "     Facturacion",
+              url: "/Inventory/billing",
+              icon: "fa fa-shopping-cart"
+            }
+          ]
         }
       ]
     },
@@ -47,7 +54,7 @@ export default {
           icon: "icon-social-dropbox"
         }
       ]
-    }
+    },
     /* ,
     {
       title: true,
@@ -295,19 +302,18 @@ export default {
           icon: "icon-star"
         }
       ]
-    }*/,
-    {
-      name: 'Download CoreUI',
-      url: 'http://coreui.io/react/',
-      icon: 'icon-cloud-download',
-      class: 'mt-auto',
-      variant: 'success',
+    }*/ {
+      name: "Download CoreUI",
+      url: "http://coreui.io/react/",
+      icon: "icon-cloud-download",
+      class: "mt-auto",
+      variant: "success"
     },
     {
-      name: 'Try CoreUI PRO',
-      url: 'http://coreui.io/pro/react/',
-      icon: 'icon-layers',
-      variant: 'danger',
-    }, 
+      name: "Try CoreUI PRO",
+      url: "http://coreui.io/pro/react/",
+      icon: "icon-layers",
+      variant: "danger"
+    }
   ]
 };

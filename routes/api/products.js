@@ -6,7 +6,7 @@ const Products = require("../../models/products");
 const Presentation = require("../../models/presentation");
 
 router.get("/", (req, res) => {
-  Products.find({}).then(product => {    
+  Products.find({}).then(product => {
     res.json(product);
   });
 });
@@ -17,8 +17,10 @@ router.post("/", (req, res) => {
     presentation: req.body.presentation,
     category: req.body.category,
     sku: req.body.sku,
-    Inputs : req.body.Inputs,
-    ActualAmount: req.body.ActualAmount
+    Inputs: req.body.Inputs,
+    ActualAmount: req.body.ActualAmount,
+    price: req.body.price,
+    enable: req.body.enable
   });
 
   newProducts.save().then(products => res.json(products));
@@ -31,7 +33,9 @@ router.put("/:id", (req, resp) => {
   products.category = req.body.category;
   products.sku = req.body.sku;
   products.Inputs = req.body.Inputs;
-  products.ActualAmount= req.body.ActualAmount;
+  products.ActualAmount = req.body.ActualAmount;
+  products.price = req.body.price;
+  products.enable = req.body.enable;
 
   let qurery = { _id: req.params.id };
 

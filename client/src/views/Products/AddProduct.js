@@ -10,6 +10,9 @@ import {
   Form,
   FormGroup,
   Input,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupText,
   Label,
   Row,
   Modal,
@@ -19,7 +22,9 @@ import {
   Pagination,
   PaginationItem,
   PaginationLink,
-  Table
+  Table,
+  Tooltip,
+  UncontrolledTooltip
 } from "reactstrap";
 import { getItemsPresentations } from "../../actions/presentationAction";
 import { getItemsCategories } from "../../actions/categoryAction";
@@ -35,6 +40,9 @@ import { presentation } from "../../actions/types";
 import { categories } from "../../actions/types";
 import { products } from "../../actions/types";
 import uuid from "uuid";
+import moment from "moment";
+import formatCurrency from "format-currency";
+import { AppSwitch } from "@coreui/react";
 
 class AddProduct extends Component {
   constructor(props) {
@@ -44,6 +52,7 @@ class AddProduct extends Component {
     this.toggleFade = this.toggleFade.bind(this);
     this.toggleModal = this.toggleModal.bind(this);
     this.state = {
+      tooltipOpen: [false, false],
       modal: false,
       collapse: true,
       fadeIn: true,
@@ -57,10 +66,17 @@ class AddProduct extends Component {
       productEditId: "",
       headerModal: "",
       status: "primary",
-      deleteId: ""
+      deleteId: "",
+      price: "",
+      classModal: "",
+      lookDelete: "none"
     };
 
     this.deleteProduct = this.deleteProduct.bind(this);
+    this.handleonBlur = this.handleonBlur.bind(this);
+    this.onlookDelete = this.onlookDelete.bind(this);
+    this.toggleTooltip = this.toggleTooltip.bind(this);
+    this.defaultValues = this.defaultValues.bind(this);
   }
 
   componentDidMount() {
@@ -83,6 +99,11 @@ class AddProduct extends Component {
     let { name, value } = e.target;
     this.setState({ [name]: value });
   };
+
+  handleonBlur() {
+    var price = formatCurrency(this.state.price);
+    this.setState({ price: price });
+  }
 
   toggleModal() {
     this.setState({ modal: !this.state.modal });
@@ -115,6 +136,7 @@ class AddProduct extends Component {
 
     const newItem = {
       name: this.state.nameProduct,
+      price: this.state.price,
       presentation: this.props.item.items.find(
         x => x._id === this.state.idPresentation
       ),
@@ -135,7 +157,6 @@ class AddProduct extends Component {
           ActualAmount: 0
         }
       ];
-      console.log(newItem);
       this.props.addItem(newItem, products);
     } else {
       newItem.Inputs = this.props.product.items.find(
@@ -144,9 +165,7 @@ class AddProduct extends Component {
       newItem.ActualAmount = this.props.product.items.find(
         x => x._id === this.state.productEditId
       ).ActualAmount;
-      console.log(this.props.product.items.find(
-        x => x._id === this.state.productEditId
-      ));
+      newItem.enable = true;
       this.props.updateItem(this.state.productEditId, newItem, products);
       this.props.getItemsProducts(products);
       this.setState({ edit: !this.state.edit });
@@ -160,6 +179,8 @@ class AddProduct extends Component {
     this.setState({ idPresentation: "" });
     this.setState({ idCategory: "" });
     this.setState({ productEditId: "" });
+    this.setState({ price: "" });
+    this.setState({ edit: false });
   }
 
   onEditClick(_id) {
@@ -170,9 +191,11 @@ class AddProduct extends Component {
     this.setState({ idPresentation: product.presentation._id });
     this.setState({ idCategory: product.category._id });
     this.setState({ productEditId: product._id });
+    this.setState({ price: formatCurrency(product.price) });
   }
 
   onDeleteClick(_id) {
+    this.setState({ classModal: "modal-danger " + this.props.className });
     this.setState({ modal: !this.state.modal });
     this.setState({ headerModal: ".:: ? ::." });
     this.setState({ status: "danger" });
@@ -181,21 +204,47 @@ class AddProduct extends Component {
   }
 
   deleteProduct() {
-    this.props.deleteItem(this.state.deleteId, products);
+    var product = this.props.product.items.find(
+      x => x._id === this.state.deleteId
+    );
+    product.enable = false;
+    this.props.updateItem(this.state.deleteId, product, products);
+    this.props.getItemsProducts(products);
     this.setState({ modal: !this.state.modal });
+    /* this.props.deleteItem(this.state.deleteId, products);
+     */
   }
+
+  onlookDelete() {
+    if (document.getElementById("lookDelete").checked) {
+      this.setState({ lookDelete: "" });
+    } else {
+      this.setState({ lookDelete: "none" });
+    }
+  }
+
+  toggleTooltip(i) {
+    const newArray = this.state.tooltipOpen.map((element, index) => {
+      return index === i ? !element : false;
+    });
+    this.setState({
+      tooltipOpen: newArray
+    });
+  }
+  
 
   render() {
     const presentations = this.props.item.items;
     const categories = this.props.category.items;
     const products = this.props.product.items;
+    const opts = { format: "%s%v", symbol: "$" };
 
     return (
       <div className="animated fadeIn">
         <Modal
           isOpen={this.state.modal}
           toggle={this.toggleModal}
-          className={this.props.className}
+          className={this.state.classModal}
         >
           <ModalHeader toggle={this.toggleModal}>
             {this.state.headerModal}
@@ -223,7 +272,13 @@ class AddProduct extends Component {
                       data-target="#collapseExample"
                       onClick={this.toggle}
                     >
-                      <i className="icon-arrow-up" />
+                      <i
+                        className={
+                          this.state.collapse
+                            ? "icon-arrow-up"
+                            : "icon-arrow-down"
+                        }
+                      />
                     </Button>
                   </div>
                 </CardHeader>
@@ -232,7 +287,7 @@ class AddProduct extends Component {
                     <Form className="form-horizontal" onSubmit={this.onSubmit}>
                       <Col md="12">
                         <FormGroup row className="my-0">
-                          <Col xs="3">
+                          <Col xs="4">
                             <FormGroup>
                               <Label htmlFor="Product">Producto</Label>
                               <Input
@@ -245,7 +300,32 @@ class AddProduct extends Component {
                               />
                             </FormGroup>
                           </Col>
-                          <Col xs="3">
+                          <Col xs="2">
+                            <FormGroup>
+                              <Label htmlFor="Product">
+                                <strong>Codigo Interno</strong>
+                                <small> (SKU)</small>
+                              </Label>
+                              <div className="controls">
+                                <InputGroup className="input-prepend">
+                                  <InputGroupAddon addonType="prepend">
+                                    <InputGroupText>
+                                      <i class="fa fa-barcode" />
+                                    </InputGroupText>
+                                  </InputGroupAddon>
+                                  <Input
+                                    type="text"
+                                    id="idCodProduct"
+                                    name="idCodProduct"
+                                    placeholder="Codigo Interno"
+                                    onChange={this.handleChange}
+                                    value={this.state.idCodProduct}
+                                  />
+                                </InputGroup>
+                              </div>
+                            </FormGroup>
+                          </Col>
+                          <Col xs="2">
                             <FormGroup>
                               <Label htmlFor="postal-code">Presentación</Label>
                               <Input
@@ -268,7 +348,7 @@ class AddProduct extends Component {
                               </Input>
                             </FormGroup>
                           </Col>
-                          <Col xs="3">
+                          <Col xs="2">
                             <FormGroup>
                               <Label htmlFor="postal-code">Categoria</Label>
                               <Input
@@ -289,20 +369,26 @@ class AddProduct extends Component {
                               </Input>
                             </FormGroup>
                           </Col>
-                          <Col xs="3">
+
+                          <Col xs="2">
                             <FormGroup>
-                              <Label htmlFor="Product">
-                                <strong>Codigo Interno</strong>
-                                <small> (SKU)</small>
-                              </Label>
-                              <Input
-                                type="text"
-                                id="idCodProduct"
-                                name="idCodProduct"
-                                placeholder="Codigo Interno"
-                                onChange={this.handleChange}
-                                value={this.state.idCodProduct}
-                              />
+                              <Label htmlFor="Product">Precio</Label>
+                              <div className="controls">
+                                <InputGroup className="input-prepend">
+                                  <InputGroupAddon addonType="prepend">
+                                    <InputGroupText>$</InputGroupText>
+                                  </InputGroupAddon>
+                                  <Input
+                                    type="text"
+                                    id="price"
+                                    name="price"
+                                    placeholder="Precio Producto"
+                                    onChange={this.handleChange}
+                                    onBlur={this.handleonBlur}
+                                    value={this.state.price}
+                                  />
+                                </InputGroup>
+                              </div>
                             </FormGroup>
                           </Col>
                         </FormGroup>
@@ -322,10 +408,20 @@ class AddProduct extends Component {
                           type="submit"
                           color="warning"
                           style={{
-                            display: this.state.edit ? "block" : "none"
+                            display: this.state.edit ? "" : "none"
                           }}
                         >
                           Editar
+                        </Button>
+                        {"  "}
+                        <Button
+                          onClick={this.defaultValues}
+                          color="danger"
+                          style={{
+                            display: this.state.edit ? "" : "none"
+                          }}
+                        >
+                          Cancelar
                         </Button>
                       </Col>
                     </Form>
@@ -343,6 +439,26 @@ class AddProduct extends Component {
           <Col>
             <Card>
               <CardBody>
+                <a href="#" id="TooltipExample">
+                  <AppSwitch
+                    className={"mx-1"}
+                    // variant={"pill"}
+                    color={"danger"}
+                    id="lookDelete"
+                    onChange={this.onlookDelete}
+                  />
+                </a>
+
+                <Tooltip
+                  placement="top"
+                  isOpen={this.state.tooltipOpen[0]}
+                  target="TooltipExample"
+                  toggle={() => {
+                    this.toggleTooltip(0);
+                  }}
+                >
+                  Ver Productos Eliminados
+                </Tooltip>
                 <Table striped>
                   <thead>
                     <tr>
@@ -353,36 +469,104 @@ class AddProduct extends Component {
                         <strong>Codigo Interno</strong>
                         <small> (SKU)</small>
                       </th>
-                      <th>Opciones</th>
+                      <th>Precio ($)</th>
+                      <th />
+                      <th />
                     </tr>
                   </thead>
                   <tbody>
                     {products.map(
-                      ({ _id, name, presentation, category, sku }) => (
-                        <tr key={_id}>
-                          <td>{name}</td>
+                      ({
+                        _id,
+                        name,
+                        presentation,
+                        category,
+                        sku,
+                        price,
+                        enable
+                      }) => (
+                        <tr
+                          key={_id}
+                          style={
+                            !enable
+                              ? {
+                                  display: this.state.lookDelete,
+                                  backgroundColor: "#f86c6b"
+                                }
+                              : { display: "" }
+                          }
+                        >
+                          <td>{!enable ? <del>{name}</del> : name}</td>
                           <td id={presentation._id}>
-                            {presentation.name} x {presentation.quantity}
+                            {!enable ? (
+                              <del>{presentation.name}</del>
+                            ) : (
+                              presentation.name
+                            )}{" "}
+                            x{" "}
+                            {!enable ? (
+                              <del>{presentation.quantity}</del>
+                            ) : (
+                              presentation.quantity
+                            )}
                           </td>
-                          <td id={category._id}>{category.name}</td>
-                          <td>{sku} </td>
+                          <td id={category._id}>
+                            {!enable ? (
+                              <del>{category.name}</del>
+                            ) : (
+                              category.name
+                            )}
+                          </td>
+                          <td>{!enable ? <del>{sku}</del> : sku} </td>
+                          <td>
+                            {!enable ? (
+                              <del>{formatCurrency(price, opts)}</del>
+                            ) : (
+                              formatCurrency(price, opts)
+                            )}{" "}
+                          </td>
                           <td align="center">
                             <Button
                               onClick={this.onEditClick.bind(this, _id)}
                               size="sm"
-                              color="primary"
-                              tootip="Editar"
+                              color="primary"  
+                              id="editProduct"                            
+                              disabled={!enable}
                             >
                               <i className="fa fa-edit" />
-                            </Button>{" "}
+                            </Button>
+                            <Tooltip
+                              placement="top"
+                              isOpen={this.state.tooltipOpen[0]}
+                              target="editProduct"
+                              toggle={() => {
+                                this.toggleTooltip(0);
+                              }}
+                            >
+                              Editar Producto
+                            </Tooltip>{" "}
                             <Button
                               onClick={this.onDeleteClick.bind(this, _id)}
                               size="sm"
                               color="danger"
                               tooltip="Eliminar"
+                              disabled={!enable}
                             >
                               <i className="fa icon-trash" />
                             </Button>
+                            {"  "}
+                            <Button
+                              //onClick={this.onDeleteClick.bind(this, _id)}
+                              size="sm"
+                              color="primary"
+                              tooltip="Ver Entradas"
+                              disabled={!enable}
+                            >
+                              <i className="fa icon-login" />
+                            </Button>
+                          </td>
+                          <td>
+                            {!enable ? <i class="fa fa-lock fa-lg" /> : ""}
                           </td>
                         </tr>
                       )

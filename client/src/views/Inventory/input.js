@@ -35,7 +35,9 @@ import { connect } from "react-redux";
 import { presentation } from "../../actions/types";
 import { categories } from "../../actions/types";
 import { products } from "../../actions/types";
-
+import uuid from "uuid";
+import moment from "moment";
+moment.locale("es");
 class InputProducts extends Component {
   constructor(props) {
     super(props);
@@ -57,7 +59,13 @@ class InputProducts extends Component {
       productSelected: "",
       lookInputs: false,
       Inputs: [],
-      ActualAmount: 0
+      Outputs: [],
+      ActualAmount: 0,
+      inputValue: 0,
+      dateInput: Date,
+      ActualAmount: 0,
+      descriptionInput: "",
+      classModal : ""
     };
     this.handleChange = this.handleChange.bind(this);
     this.onSearchClick = this.onSearchClick.bind(this);
@@ -67,6 +75,8 @@ class InputProducts extends Component {
     this.toggleModal = this.toggleModal.bind(this);
     this.onClearFilters = this.onClearFilters.bind(this);
     this.onSelectProduct = this.onSelectProduct.bind(this);
+    this.onInsertClick = this.onInsertClick.bind(this);
+    this.onClearFiltersSelected = this.onClearFiltersSelected.bind(this);
   }
 
   componentDidMount() {
@@ -102,6 +112,7 @@ class InputProducts extends Component {
         x => x._id === _id
       )
     });
+
     this.setState({
       productSelected: (
         <small>
@@ -121,12 +132,21 @@ class InputProducts extends Component {
         </small>
       )
     });
+
     this.setState({ lookInputs: true });
+
     this.setState({ collapseInputs: true });
+
     this.setState({
       Inputs: this.state.productSearchResult.filter(x => x._id === _id)[0]
         .Inputs
     });
+
+    this.setState({
+      Outpus: this.state.productSearchResult.filter(x => x._id === _id)[0]
+        .Outpus
+    });
+
     this.setState({
       ActualAmount: this.state.productSearchResult.filter(x => x._id === _id)[0]
         .ActualAmount
@@ -144,6 +164,12 @@ class InputProducts extends Component {
     this.setState({ productSearchResult: [] });
     this.setState({ lookInputs: false });
     this.setState({ collapseInputs: false });
+  }
+
+  onClearFiltersSelected() {
+    this.setState({ dateInput: "" });
+    this.setState({ inputValue: 0 });
+    this.setState({ descriptionInput: "" });
   }
 
   onSearchClick(e) {
@@ -211,18 +237,82 @@ class InputProducts extends Component {
     }
   }
 
+  onInsertClick() {
+    let errors = [];
+
+    if (this.state.inputValue === 0 || this.state.idPresentation < 0) {
+      errors.push("Debe Ingresar una cantidad valida");
+    }
+
+    if (this.state.descriptionInput === "") {
+      errors.push("Debe Ingresar una descripcion del ingreso");
+    }
+
+    if (errors.length > 0) {
+      this.setState(({classModal : 'modal-danger ' + this.props.className}));
+      this.state.message = errors.map((error, i) => <p key={i}>{error}</p>);
+      this.setState({ modal: !this.state.modal });
+      this.setState({
+        headerModal: ".:: Se presentarion los siguientes errores ::."
+      });
+      this.setState({
+        buttons: (
+          <Button color="primary" onClick={this.toggleModal}>
+            Aceptar
+          </Button>
+        )
+      });
+      return;
+    }
+
+    var inputs = 0;
+    var outputs = 0;
+    if (this.state.Outputs.length > 0) {
+      outputs = this.state.Outputs.reduce(
+        (prev, next) => prev + next.Output,
+        0
+      );
+    }
+    if (this.state.Inputs.length > 0) {
+      inputs = this.state.Inputs.reduce((prev, next) => prev + next.Input, 0);
+    }
+
+    var actual =
+      Number(inputs) - Number(outputs) + Number(this.state.inputValue);
+
+    this.setState({ ActualAmount: actual });
+
+    let inputProduct = {
+      ActualAmount: actual,
+      Input: {
+        _id: uuid(),
+        CreationDate: Date.now(),
+        DescriptionInput: this.state.descriptionInput,
+        Input: this.state.inputValue,
+        ActualAmount: actual
+      }
+    };
+
+    var product = this.state.productSearchResult[0];
+    product.ActualAmount = inputProduct.ActualAmount;
+    product.Inputs.push(inputProduct.Input);
+    this.props.updateItem(product._id, product, products);
+    this.props.getItemsProducts(products);
+    this.setState({ ActualAmount: actual });
+  }
   render() {
     const presentations = this.props.item.items;
     const categories = this.props.category.items;
     const products = this.props.product.items;
     const productsFind = this.state.productSearchResult;
+
     return (
       <div className="animated fadeIn">
         <Modal
           size="lg"
           isOpen={this.state.modal}
           toggle={this.toggleModal}
-          className={this.props.className}
+          className={this.state.classModal}
         >
           <ModalHeader toggle={this.toggleModal}>
             {this.state.headerModal}
@@ -468,8 +558,8 @@ class InputProducts extends Component {
                               <Input
                                 type="text"
                                 id="disabled-input"
-                                name="disabled-input"
-                                placeholder={this.state.ActualAmount}
+                                name="ActualAmount"
+                                value={this.state.ActualAmount}
                                 disabled
                               />
                             </FormGroup>
@@ -478,13 +568,15 @@ class InputProducts extends Component {
                             <FormGroup>
                               <Label htmlFor="Product">Fecha Ingreso</Label>
                               <Input
-                                type="date"
+                                type="text"
                                 id="dateInput"
                                 name="dateInput"
                                 placeholder="Fecha Ingreso"
                                 onChange={this.handleChange}
-                                value={Date.now()}
-                                //value={this.state.nameProduct}
+                                value={moment().format(
+                                  "MMMM Do YYYY, h:mm:ss a"
+                                )}
+                                disabled
                               />
                             </FormGroup>
                           </Col>
@@ -495,10 +587,10 @@ class InputProducts extends Component {
                               </Label>
                               <Input
                                 type="number"
-                                name="idCategory"
-                                id="idCategory"
+                                name="inputValue"
+                                id="inputValue"
                                 onChange={this.handleChange}
-                                //value={this.state.idCategory}
+                                value={this.state.inputValue}
                               />
                             </FormGroup>
                           </Col>
@@ -509,25 +601,24 @@ class InputProducts extends Component {
                               </Label>
                               <Input
                                 type="textarea"
-                                name="idPresentation"
+                                name="descriptionInput"
                                 id="idPresentation"
                                 onChange={this.handleChange}
-                                //value={this.state.idPresentation}
+                                value={this.state.descriptionInput}
                               />
                             </FormGroup>
                           </Col>
                         </FormGroup>
                       </Col>
                       <Col md="12">
-                        <Button
-                          type="submit"
-                          color="success"
-                          onClick={this.onSearchClick}
-                        >
-                          Buscar
+                        <Button color="success" onClick={this.onInsertClick}>
+                          Ingresar
                         </Button>
                         {"  "}
-                        <Button color="warning" onClick={this.onClearFilters}>
+                        <Button
+                          color="warning"
+                          onClick={this.onClearFiltersSelected}
+                        >
                           Limpiar
                         </Button>
                       </Col>
@@ -552,7 +643,11 @@ class InputProducts extends Component {
                           ActualAmount
                         }) => (
                           <tr key={_id}>
-                            <td>{CreationDate}</td>
+                            <td>
+                              {moment(CreationDate).format(
+                                "MMMM Do YYYY, h:mm:ss a"
+                              )}
+                            </td>
                             <td>
                               <small>{DescriptionInput}</small>
                             </td>
