@@ -36,6 +36,7 @@ router.put("/:id", (req, resp) => {
   products.ActualAmount = req.body.ActualAmount;
   products.price = req.body.price;
   products.enable = req.body.enable;
+  products.Outputs = req.body.Outputs;
 
   let qurery = { _id: req.params.id };
 

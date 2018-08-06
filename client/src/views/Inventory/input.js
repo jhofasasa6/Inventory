@@ -16,11 +16,9 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Pagination,
-  PaginationItem,
-  PaginationLink,
   Table,
-  NavLink
+  NavLink,
+  Tooltip
 } from "reactstrap";
 import { getItemsPresentations } from "../../actions/presentationAction";
 import { getItemsCategories } from "../../actions/categoryAction";
@@ -37,11 +35,13 @@ import { categories } from "../../actions/types";
 import { products } from "../../actions/types";
 import uuid from "uuid";
 import moment from "moment";
+import { AppSwitch } from "@coreui/react";
 moment.locale("es");
 class InputProducts extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      tooltipOpen: [false, false],
       modal: false,
       collapseFilter: true,
       collapseResult: true,
@@ -65,7 +65,11 @@ class InputProducts extends Component {
       dateInput: Date,
       ActualAmount: 0,
       descriptionInput: "",
-      classModal : ""
+      classModal: "",
+      enable: false,
+      error: "",
+      mix: [],
+      lookOutputs: "none"
     };
     this.handleChange = this.handleChange.bind(this);
     this.onSearchClick = this.onSearchClick.bind(this);
@@ -77,12 +81,32 @@ class InputProducts extends Component {
     this.onSelectProduct = this.onSelectProduct.bind(this);
     this.onInsertClick = this.onInsertClick.bind(this);
     this.onClearFiltersSelected = this.onClearFiltersSelected.bind(this);
+    this.mix = this.mix.bind(this);
+    this.onlookOutputs = this.onlookOutputs.bind(this);
+    this.toggleTooltip = this.toggleTooltip.bind(this);
   }
 
   componentDidMount() {
     this.props.getItemsPresentations(presentation);
     this.props.getItemsCategories(categories);
     this.props.getItemsProducts(products);
+  }
+
+  toggleTooltip(i) {
+    const newArray = this.state.tooltipOpen.map((element, index) => {
+      return index === i ? !element : false;
+    });
+    this.setState({
+      tooltipOpen: newArray
+    });
+  }
+
+  onlookOutputs() {
+    if (document.getElementById("lookOutputs").checked) {
+      this.setState({ lookOutputs: "" });
+    } else {
+      this.setState({ lookOutputs: "none" });
+    }
   }
 
   toggleFilters() {
@@ -107,6 +131,14 @@ class InputProducts extends Component {
   }
 
   onSelectProduct(_id) {
+    if (!this.state.productSearchResult.filter(x => x._id === _id)[0].enable) {
+      this.setState({ enable: true });
+      this.setState({ error: "Producto no disponible" });
+    } else {
+      this.setState({ enable: false });
+      this.setState({ error: "" });
+    }
+
     this.setState({
       productSearchResult: this.state.productSearchResult.filter(
         x => x._id === _id
@@ -143,9 +175,11 @@ class InputProducts extends Component {
     });
 
     this.setState({
-      Outpus: this.state.productSearchResult.filter(x => x._id === _id)[0]
-        .Outpus
+      Outputs: this.state.productSearchResult.filter(x => x._id === _id)[0]
+        .Outputs
     });
+
+    this.mix();
 
     this.setState({
       ActualAmount: this.state.productSearchResult.filter(x => x._id === _id)[0]
@@ -154,6 +188,47 @@ class InputProducts extends Component {
 
     this.toggleFilters();
     this.toggleResult();
+  }
+
+  mix() {
+    let mezclas = [];
+    this.state.productSearchResult[0].Inputs.map(
+      ({ _id, DescriptionInput, Input, CreationDate, ActualAmount, Index }) =>
+        mezclas.push({
+          _id: _id,
+          date: CreationDate,
+          description: DescriptionInput,
+          quantity: Input,
+          actualAmount: ActualAmount,
+          index: Index,
+          type: "I" //Input
+        })
+    );
+
+    this.state.productSearchResult[0].Outputs.map(
+      ({ _id, DescriptionOutput, Output, CreationDate, ActualAmount, Index }) =>
+        mezclas.push({
+          _id: _id,
+          date: CreationDate,
+          description: DescriptionOutput,
+          quantity: Output,
+          actualAmount: ActualAmount,
+          index: Index,
+          type: "O" //Output
+        })
+    );
+
+    mezclas.sort(function(a, b) {
+      if (a.index > b.index) {
+        return 1;
+      }
+      if (a.index < b.index) {
+        return -1;
+      }
+      return 0;
+    });
+    this.setState({ mix: mezclas });
+    console.log(this.state.mix);
   }
 
   onClearFilters() {
@@ -172,6 +247,20 @@ class InputProducts extends Component {
     this.setState({ descriptionInput: "" });
   }
 
+  configModal = (style, title, message, valueButton) => {
+    this.setState({ classModal: style + this.props.className });
+    this.setState({ headerModal: `.:: ${title} ::.` });
+    this.setState({ message: message });
+    this.setState({
+      buttons: (
+        <Button color="primary" onClick={this.toggleModal}>
+          {valueButton}
+        </Button>
+      )
+    });
+    this.toggleModal();
+  };
+
   onSearchClick(e) {
     e.preventDefault();
 
@@ -181,18 +270,12 @@ class InputProducts extends Component {
       this.state.idCategory === "" &&
       this.state.idCodProduct === ""
     ) {
-      this.setState({ headerModal: ".:: Busqueda ::." });
-      this.setState({
-        message: "ingrese algunos de los filtros para la busqueda"
-      });
-      this.setState({
-        buttons: (
-          <Button color="primary" onClick={this.toggleModal}>
-            Aceptar
-          </Button>
-        )
-      });
-      this.toggleModal();
+      this.configModal(
+        "modal-danger ",
+        "Busqueda",
+        "ingrese algunos de los filtros para la busqueda",
+        "Aceptar"
+      );
       return;
     }
     var productSearch = this.props.product.items;
@@ -216,18 +299,12 @@ class InputProducts extends Component {
     this.setState({ productSearchResult: productSearch });
 
     if (productSearch.length === 0) {
-      this.setState({ headerModal: ".:: Busqueda ::." });
-      this.setState({
-        message: "No se encontraron articulos con los filtros ingresados"
-      });
-      this.setState({
-        buttons: (
-          <Button color="primary" onClick={this.toggleModal}>
-            Aceptar
-          </Button>
-        )
-      });
-      this.toggleModal();
+      this.configModal(
+        "modal-danger ",
+        "Busqueda",
+        "No se encontraron articulos con los filtros ingresados",
+        "Aceptar"
+      );
     } else {
       if (!this.state.collapseResult) {
         this.toggleResult();
@@ -249,24 +326,21 @@ class InputProducts extends Component {
     }
 
     if (errors.length > 0) {
-      this.setState(({classModal : 'modal-danger ' + this.props.className}));
-      this.state.message = errors.map((error, i) => <p key={i}>{error}</p>);
-      this.setState({ modal: !this.state.modal });
-      this.setState({
-        headerModal: ".:: Se presentarion los siguientes errores ::."
-      });
-      this.setState({
-        buttons: (
-          <Button color="primary" onClick={this.toggleModal}>
-            Aceptar
-          </Button>
-        )
-      });
+      var message = errors.map((error, i) => <p key={i}>{error}</p>);
+      this.configModal(
+        "modal-danger ",
+        "Se presentaron los siguientes errores",
+        message,
+        "Aceptar"
+      );
+
       return;
     }
 
     var inputs = 0;
     var outputs = 0;
+    var index =
+      Number(this.state.Outputs.length) + Number(this.state.Inputs.length);
     if (this.state.Outputs.length > 0) {
       outputs = this.state.Outputs.reduce(
         (prev, next) => prev + next.Output,
@@ -289,7 +363,8 @@ class InputProducts extends Component {
         CreationDate: Date.now(),
         DescriptionInput: this.state.descriptionInput,
         Input: this.state.inputValue,
-        ActualAmount: actual
+        ActualAmount: actual,
+        Index: index
       }
     };
 
@@ -299,6 +374,7 @@ class InputProducts extends Component {
     this.props.updateItem(product._id, product, products);
     this.props.getItemsProducts(products);
     this.setState({ ActualAmount: actual });
+    this.mix();
   }
   render() {
     const presentations = this.props.item.items;
@@ -435,7 +511,7 @@ class InputProducts extends Component {
                           Buscar
                         </Button>
                         {"  "}
-                        <Button color="warning" onClick={this.onClearFilters}>
+                        <Button color="primary" onClick={this.onClearFilters}>
                           Limpiar
                         </Button>
                       </Col>
@@ -487,25 +563,68 @@ class InputProducts extends Component {
                         <th>Presentación</th>
                         <th>Categoria</th>
                         <th>Codigo Interno</th>
+                        <th />
                       </tr>
                     </thead>
                     <tbody>
                       {productsFind.map(
-                        ({ _id, name, presentation, category, sku }) => (
-                          <tr key={_id}>
-                            <td>{name}</td>
+                        ({
+                          _id,
+                          name,
+                          presentation,
+                          category,
+                          sku,
+                          enable
+                        }) => (
+                          <tr
+                            key={_id}
+                            style={
+                              !enable
+                                ? {
+                                    backgroundColor: "#f86c6b"
+                                  }
+                                : {
+                                    backgroundColor: ""
+                                  }
+                            }
+                          >
+                            <td>{!enable ? <del>{name}</del> : name}</td>
                             <td>
-                              {presentation.name} x {presentation.quantity}
+                              {!enable ? (
+                                <del>
+                                  {presentation.name} x {presentation.quantity}
+                                </del>
+                              ) : (
+                                presentation.name + "x" + presentation.quantity
+                              )}
                             </td>
-                            <td>{category.name}</td>
+                            <td>
+                              {!enable ? (
+                                <del>{category.name}</del>
+                              ) : (
+                                category.name
+                              )}
+                            </td>
                             <td>
                               {" "}
                               <NavLink
                                 href="#"
                                 onClick={this.onSelectProduct.bind(this, _id)}
+                                style={
+                                  !enable
+                                    ? {
+                                        color: "#fff"
+                                      }
+                                    : {
+                                        backgroundColor: ""
+                                      }
+                                }
                               >
                                 {sku}
                               </NavLink>
+                            </td>
+                            <td>
+                              {!enable ? <i class="fa fa-lock fa-lg" /> : ""}
                             </td>
                           </tr>
                         )
@@ -591,6 +710,7 @@ class InputProducts extends Component {
                                 id="inputValue"
                                 onChange={this.handleChange}
                                 value={this.state.inputValue}
+                                disabled={this.state.enable}
                               />
                             </FormGroup>
                           </Col>
@@ -605,54 +725,107 @@ class InputProducts extends Component {
                                 id="idPresentation"
                                 onChange={this.handleChange}
                                 value={this.state.descriptionInput}
+                                disabled={this.state.enable}
                               />
                             </FormGroup>
                           </Col>
                         </FormGroup>
                       </Col>
                       <Col md="12">
-                        <Button color="success" onClick={this.onInsertClick}>
+                        <Button
+                          color="success"
+                          onClick={this.onInsertClick}
+                          disabled={this.state.enable}
+                        >
                           Ingresar
                         </Button>
                         {"  "}
                         <Button
-                          color="warning"
+                          color="primary"
                           onClick={this.onClearFiltersSelected}
                         >
                           Limpiar
                         </Button>
                       </Col>
+                      <Col md="12" style={{ textAlign: "center" }}>
+                        <small>
+                          <Label style={{ color: "#f86c6b" }}>
+                            <b>{this.state.error}</b>
+                          </Label>
+                        </small>
+                      </Col>
+                      <Col md="12" style={{ textAlign: "right" }}>
+                        <a href="#" id="TooltipExample">
+                          <AppSwitch
+                            className={"mx-1"}
+                            // variant={"pill"}
+                            color={"danger"}
+                            id="lookOutputs"
+                            onChange={this.onlookOutputs}
+                          />
+                        </a>
+                      </Col>
                     </Form>
                   </CardBody>
+                  <Tooltip
+                    placement="top"
+                    isOpen={this.state.tooltipOpen[0]}
+                    target="TooltipExample"
+                    toggle={() => {
+                      this.toggleTooltip(0);
+                    }}
+                  >
+                    Ver Salidas
+                  </Tooltip>
                   <Table striped>
                     <thead>
                       <tr>
-                        <th>Fecha Ingreso</th>
+                        <th>Fecha</th>
                         <th>Descripción</th>
-                        <th>Cantidad Ingreso</th>
+                        <th>Cantidad</th>
                         <th>Cantidad Actual</th>
+                        <th />
                       </tr>
                     </thead>
                     <tbody>
-                      {this.state.Inputs.map(
+                      {this.state.mix.map(
                         ({
                           _id,
-                          DescriptionInput,
-                          Input,
-                          CreationDate,
-                          ActualAmount
+                          description,
+                          quantity,
+                          date,
+                          actualAmount,
+                          index,
+                          type
                         }) => (
-                          <tr key={_id}>
+                          <tr
+                            key={_id}
+                            style={
+                              type === "I"
+                                ? {
+                                    backgroundColor: ""
+                                  }
+                                : {
+                                    display: this.state.lookOutputs,
+                                    backgroundColor: "#f86c6b"
+                                  }
+                            }
+                          >
                             <td>
-                              {moment(CreationDate).format(
-                                "MMMM Do YYYY, h:mm:ss a"
+                              {moment(date).format("MMMM Do YYYY, h:mm:ss a")}
+                            </td>
+                            <td>
+                              <small>{description}</small>
+                            </td>
+                            <td>{quantity}</td>
+                            <td>{actualAmount}</td>
+                            <td>
+                              {type === "I" ? (
+                                <i className="fa icon-login" />
+                              ) : (
+                                <i className="fa icon-logout" />
                               )}
                             </td>
-                            <td>
-                              <small>{DescriptionInput}</small>
-                            </td>
-                            <td>{Input}</td>
-                            <td>{ActualAmount}</td>
                           </tr>
                         )
                       )}
@@ -668,8 +841,7 @@ class InputProducts extends Component {
   }
 }
 
-InputProducts.PropTypes = {
-  getItems: PropTypes.func.isRequired,
+InputProducts.propTypes = {
   addItem: PropTypes.func.isRequired,
   getItemsProducts: PropTypes.func.isRequired,
   deleteItem: PropTypes.func.isRequired,

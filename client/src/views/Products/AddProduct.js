@@ -154,7 +154,8 @@ class AddProduct extends Component {
           DescriptionInput: "Creación de Producto",
           Input: 0,
           CreationDate: Date.now(),
-          ActualAmount: 0
+          ActualAmount: 0,
+          Index: 0
         }
       ];
       this.props.addItem(newItem, products);
@@ -231,7 +232,6 @@ class AddProduct extends Component {
       tooltipOpen: newArray
     });
   }
-  
 
   render() {
     const presentations = this.props.item.items;
@@ -529,8 +529,8 @@ class AddProduct extends Component {
                             <Button
                               onClick={this.onEditClick.bind(this, _id)}
                               size="sm"
-                              color="primary"  
-                              id="editProduct"                            
+                              color="primary"
+                              id="editProduct"
                               disabled={!enable}
                             >
                               <i className="fa fa-edit" />

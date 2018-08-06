@@ -54,6 +54,10 @@ const ProductSchema = Schema({
         type: String,
         require: true
       },
+      Index: {
+        type: Number,
+        requiere: true
+      },
       CreationDate: {
         type: Date,
         require: true
@@ -78,6 +82,10 @@ const ProductSchema = Schema({
         type: String,
         require: true
       },
+      Index: {
+        type: Number,
+        requiere: true
+      },
       CreationDate: {
         type: Date,
         require: true
@@ -85,6 +93,10 @@ const ProductSchema = Schema({
       DescriptionOutput: {
         type: String,
         require: true
+      },
+      typeOutput: {
+        type: String,
+        requiere: true
       },
       Output: {
         type: Number,

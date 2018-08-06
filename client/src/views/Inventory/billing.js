@@ -17,7 +17,6 @@ import {
   ModalBody,
   ModalFooter,
   Table,
-  NavLink,
   InputGroup,
   InputGroupAddon,
   InputGroupText
@@ -30,14 +29,17 @@ import {
   updateItem,
   deleteItem
 } from "../../actions/productAction";
+import { addInvoice, getInvoices } from "../../actions/invoicesAction";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { presentation } from "../../actions/types";
 import { categories } from "../../actions/types";
 import { products } from "../../actions/types";
+import { invoices } from "../../actions/types";
 import uuid from "uuid";
 import moment from "moment";
 import formatCurrency from "format-currency";
+import { buttonModal } from "./resources";
 moment.locale("es");
 
 const opts = { format: "%s%v", symbol: "$" };
@@ -62,22 +64,10 @@ class Billing extends Component {
       total: "",
       payment: "",
       result: 0,
-
-      idPresentation: "",
-      idCategory: "",
+      enablePurchase: true,
       headerModal: "",
       message: "",
       buttons: "",
-      productSearchResult: [],
-      productSelected: "",
-      lookInputs: false,
-      Inputs: [],
-      Outputs: [],
-      ActualAmount: 0,
-      inputValue: 0,
-      dateInput: Date,
-      ActualAmount: 0,
-      descriptionInput: "",
       nameClient: "",
       emailClient: ""
     };
@@ -89,12 +79,19 @@ class Billing extends Component {
     this.onBlurCodProduct = this.onBlurCodProduct.bind(this);
     this.onClickAddProduct = this.onClickAddProduct.bind(this);
     this.onClickCaculate = this.onClickCaculate.bind(this);
+    this.onClickPrintInvoice = this.onClickPrintInvoice.bind(this);
+    this.validateCalulation = this.validateCalulation.bind(this);
+    this.onClickRemoveProduct = this.onClickRemoveProduct.bind(this);
+    this.configModal = this.configModal.bind(this);
+    this.sumaryShopping = this.sumaryShopping.bind(this);
+    this.cleandStateShopping = this.cleandStateShopping.bind(this);
   }
 
   componentDidMount() {
     this.props.getItemsPresentations(presentation);
     this.props.getItemsCategories(categories);
     this.props.getItemsProducts(products);
+    this.props.getInvoices(invoices);
   }
 
   toggleInvoice() {
@@ -114,57 +111,109 @@ class Billing extends Component {
     this.setState({ [name]: value });
   }
 
-  onBlurIdentification() {
-    this.setState({ classModal: "modal-danger " + this.props.className });
-    this.setState({ headerModal: ".:: Busqueda ::." });
-    this.setState({
-      message:
-        "No existe el cliente con identificación" + this.state.documentClient
-    });
+  configModal = (style, title, message, valueButton) => {
+    this.setState({ classModal: style + this.props.className });
+    this.setState({ headerModal: `.:: ${title} ::.` });
+    this.setState({ message: message + this.state.documentClient });
     this.setState({
       buttons: (
         <Button color="primary" onClick={this.toggleModal}>
-          Aceptar
+          {valueButton}
         </Button>
       )
     });
     this.toggleModal();
-    return;
+  };
+
+  onBlurIdentification() {
+    this.configModal(
+      "modal-danger ",
+      "Busqueda",
+      "No existe el cliente con identificación  ",
+      "Aceptar"
+    );
   }
 
   onBlurCodProduct() {
     if (this.state.idCodProduct !== "") {
-      var product = this.props.product.items.filter(
+      var product = this.props.product.items.find(
         x => x.sku === this.state.idCodProduct
       );
+    }
+    if (product && product.enable) {
       this.setState({
-        nameProduct: `${product[0].name} ${product[0].presentation.name} x ${
-          product[0].presentation.quantity
+        nameProduct: `${product.name} ${product.presentation.name} x ${
+          product.presentation.quantity
         }`
       });
+    } else {
+      this.configModal(
+        "modal-danger ",
+        "Busqueda Producto",
+        "Producto no registrado",
+        "Aceptar"
+      );
+      this.setState({ idCodProduct: "" });
     }
+  }
+
+  sumaryShopping() {
+    this.setState({
+      quantityBuy: this.state.cartShopping.reduce(
+        (prev, next) => prev + Number(next.quantity),
+        0
+      )
+    });
+    this.setState({
+      subTotal: this.state.cartShopping.reduce(
+        (prev, next) =>
+          prev +
+          Number(next.quantity) * Number(next.price.replace(/[^0-9\.-]+/g, "")),
+        0
+      )
+    });
+    this.setState({
+      tax:
+        this.state.cartShopping.reduce(
+          (prev, next) =>
+            prev +
+            Number(next.quantity) *
+              Number(next.price.replace(/[^0-9\.-]+/g, "")),
+          0
+        ) *
+        (19 / 100)
+    });
+
+    this.setState({
+      total: this.state.tax + this.state.subTotal
+    });
   }
 
   onClickAddProduct() {
     if (this.state.quantity === 0 || this.state.quantity < 0) {
-      this.setState({ classModal: "modal-danger " + this.props.className });
-      this.setState({ headerModal: ".:: Busqueda ::." });
-      this.setState({
-        message: "Cantidad de compra invalida" + this.state.documentClient
-      });
-      this.setState({
-        buttons: (
-          <Button color="primary" onClick={this.toggleModal}>
-            Aceptar
-          </Button>
-        )
-      });
-      this.toggleModal();
+      this.configModal(
+        "modal-danger ",
+        "Agregar Pruducto",
+        "Cantidad de compra invalida",
+        "Aceptar"
+      );
     } else {
       var cart = this.state.cartShopping;
-      var product = this.props.product.items.filter(
+      var product = this.props.product.items.find(
         x => x.sku === this.state.idCodProduct
-      )[0];
+      );
+
+      if (this.state.quantity > product.ActualAmount || !product.enable) {
+        this.configModal(
+          "modal-danger ",
+          "Agregar Pruducto",
+          "Cantidad ingresada supera la existencia actual (" +
+            product.ActualAmount +
+            ")",
+          "Aceptar"
+        );
+        return;
+      }
 
       if (cart.find(x => x.sku === this.state.idCodProduct)) {
         var objIndex = cart.findIndex(
@@ -177,48 +226,107 @@ class Billing extends Component {
         cart.push(product);
       }
       this.setState({ cartShopping: cart });
-      this.setState({
-        quantityBuy: this.state.cartShopping.reduce(
-          (prev, next) => prev + Number(next.quantity),
-          0
-        )
-      });
-      this.setState({
-        subTotal: this.state.cartShopping.reduce(
-          (prev, next) =>
-            prev +
-            Number(next.quantity) *
-              Number(next.price.replace(/[^0-9\.-]+/g, "")),
-          0
-        )
-      });
-      this.setState({
-        tax:
-          this.state.cartShopping.reduce(
-            (prev, next) =>
-              prev +
-              Number(next.quantity) *
-                Number(next.price.replace(/[^0-9\.-]+/g, "")),
-            0
-          ) *
-          (19 / 100)
-      });
-
-      this.setState({
-        total: this.state.tax + this.state.subTotal
-      });
+      this.sumaryShopping();
     }
   }
 
   onClickCaculate() {
+    if (!this.state.cartShopping.length > 0) {
+      this.configModal(
+        "modal-danger ",
+        "Facturación",
+        "No hay productos para facturar",
+        "Aceptar"
+      );
+      return;
+    }
     this.toggleModalCalculate();
   }
-  render() {
-    const presentations = this.props.item.items;
-    const categories = this.props.category.items;
-    const products = this.props.product.items;
-    const productsFind = this.state.productSearchResult;
 
+  validateCalulation() {
+    if (this.state.payment !== "") {
+      this.setState({ enablePurchase: false });
+      this.toggleModalCalculate();
+    }
+  }
+
+  onClickPrintInvoice() {
+    if (!this.state.cartShopping.length > 0) {
+      this.configModal(
+        "modal-danger ",
+        "Facturación",
+        "No hay productos para facturar",
+        "Aceptar"
+      );
+      return;
+    }
+
+    let newInvoice = {
+      date: Date.now(),
+      idCliente: this.state.idClient,
+      products: this.state.cartShopping.map(({ _id, price, quantity }) => ({
+        idProduct: _id,
+        quantity: quantity,
+        price: price.replace(/[^0-9\.-]+/g, "")
+      })),
+      invoiceNumber: "123",
+      totalProducts: this.state.quantityBuy,
+      subTotal: this.state.subTotal,
+      totalTax: this.state.tax,
+      total: this.state.tax + this.state.subTotal
+    };
+
+    let product = {};
+    this.state.cartShopping.forEach(element => {
+      product = this.props.product.items.find(x => x._id === element._id);
+      product.Outputs.push({
+        _id: uuid(),
+        CreationDate: Date.now(),
+        DescriptionOutput: "Venta Facturacion N°: 123",
+        typeOutput: "Facturacion",
+        Output: element.quantity,
+        ActualAmount: Number(product.ActualAmount) - Number(element.quantity),
+        Index: Number(product.Outputs.length) + Number(product.Inputs.length)
+      });
+      product.ActualAmount =
+        Number(product.ActualAmount) - Number(element.quantity);
+    });
+
+    this.props.addInvoice(newInvoice, invoices);
+    this.props.updateItem(product._id, product, products);
+
+    this.configModal(
+      "modal-success ",
+      "Facturación",
+      "Factura generada exitosamente",
+      "Aceptar"
+    );
+    this.cleandStateShopping();
+  }
+
+  cleandStateShopping() {
+    this.setState({ cartShopping: [] });
+    this.setState({ quantityBuy: 0 });
+    this.setState({ subTotal: "" });
+    this.setState({ tax: "" });
+    this.setState({ total: "" });
+    this.setState({ documentClient: "" });
+    this.setState({ idCodProduct: "" });
+    this.setState({ nameProduct: "" });
+    this.setState({ quantity: 0 });
+  }
+
+  onClickRemoveProduct(sku) {
+    let products = this.state.cartShopping;
+    if (products.find(x => x.sku === sku)) {
+      var objIndex = products.findIndex(obj => obj.sku == sku);
+      products.splice(objIndex, 1);
+      this.setState({ cartShopping: products });
+      this.sumaryShopping();
+    }
+  }
+
+  render() {
     return (
       <div className="animated fadeIn">
         <Modal
@@ -245,83 +353,80 @@ class Billing extends Component {
           </ModalHeader>
           <ModalBody>
             <Col md="12" style={{ alignText: "center" }}>
-              <tbody>
-                <tr>
-                  <td>
-                    <h4>Total a Pagar: </h4>
-                  </td>
-                  <td colspan="3" align="right">
-                    <Label
-                      id="invoiceId"
-                      name="invoiceId"
-                      onChange={this.handleChange}
-                      style={{
-                        fontSize: 40,
-                        resize: "none",
-                        textAlign: "center",
-                        color: "#4dbd74",
-                        width: "auto"
-                      }}
-                    >
-                      {formatCurrency(
-                        this.state.tax + this.state.subTotal,
-                        opts
-                      )}
-                    </Label>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                  <h4>Recibido: </h4>
-                  </td>
-                  <td colspan="3" align="right">
-                    <Input
-                      type="text"
-                      name="payment"
-                      onChange={this.handleChange}
-                      value={this.state.payment}                      
-                      style={{
-                        fontSize: 40,
-                        height: 55,
-                        textAlign: "center"
-                      }}
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <h4>Devolución:</h4>
-                  </td>
-                  <td colspan="3" align="right">
-                    <Label
-                      id="invoiceId"
-                      name="invoiceId"
-                      onChange={this.handleChange}
-                      style={{
-                        fontSize: 40,
-                        resize: "none",
-                        textAlign: "right",
-                        color: "#f86c6b",
-                        width: "auto"
-                      }}
-                    >
-                      {this.state.payment -
-                        (this.state.tax + this.state.subTotal) <
-                      0
-                        ? formatCurrency(0, opts)
-                        : formatCurrency(
-                            this.state.payment -
-                              (this.state.tax + this.state.subTotal),
-                            opts
-                          )}
-                    </Label>
-                  </td>
-                </tr>
-              </tbody>
+              <Table>
+                <thead />
+                <tbody>
+                  <tr>
+                    <td>
+                      <h4>Total a Pagar: </h4>
+                    </td>
+                    <td colspan="3" align="right">
+                      <Label
+                        style={{
+                          fontSize: 40,
+                          resize: "none",
+                          textAlign: "center",
+                          color: "#4dbd74",
+                          width: "auto"
+                        }}
+                      >
+                        {formatCurrency(
+                          this.state.tax + this.state.subTotal,
+                          opts
+                        )}
+                      </Label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <h4>Recibido: </h4>
+                    </td>
+                    <td colspan="3" align="right">
+                      <Input
+                        type="text"
+                        name="payment"
+                        onChange={this.handleChange}
+                        value={this.state.payment}
+                        style={{
+                          fontSize: 40,
+                          height: 55,
+                          textAlign: "center"
+                        }}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <h4>Devolución:</h4>
+                    </td>
+                    <td colspan="3" align="right">
+                      <Label
+                        style={{
+                          fontSize: 40,
+                          resize: "none",
+                          textAlign: "right",
+                          color: "#f86c6b",
+                          width: "auto"
+                        }}
+                      >
+                        {this.state.payment -
+                          (this.state.tax + this.state.subTotal) <
+                        0
+                          ? formatCurrency(0, opts)
+                          : formatCurrency(
+                              this.state.payment -
+                                (this.state.tax + this.state.subTotal),
+                              opts
+                            )}
+                      </Label>
+                    </td>
+                  </tr>
+                </tbody>
+              </Table>
             </Col>
           </ModalBody>
           <ModalFooter>
-            <Button color="primary" onClick={this.toggleModalCalculate}>
+            <Button color="primary" onClick={this.validateCalulation}>
               Aceptar
             </Button>
           </ModalFooter>
@@ -551,6 +656,7 @@ class Billing extends Component {
                                         value={this.state.quantity}
                                         placeholder="Cantidad"
                                         style={{ textAlign: "center" }}
+                                        min="0"
                                       />
                                     </InputGroup>
                                   </div>
@@ -591,16 +697,26 @@ class Billing extends Component {
                                           <td>{sku}</td>
                                           <td>{name}</td>
                                           <td>{quantity}</td>
-                                          <th>{price}</th>
-                                          <th>
+                                          <td>{price}</td>
+                                          <td>
                                             {formatCurrency(
                                               Number(
                                                 price.replace(/[^0-9\.-]+/g, "")
                                               ) * quantity,
                                               opts
                                             )}
-                                          </th>
-                                          <td />
+                                          </td>
+                                          <td>
+                                            <Button
+                                              color="danger"
+                                              onClick={this.onClickRemoveProduct.bind(
+                                                this,
+                                                sku
+                                              )}
+                                            >
+                                              <i class="fa fa-trash" />
+                                            </Button>
+                                          </td>
                                         </tr>
                                       )
                                     )}
@@ -715,7 +831,13 @@ class Billing extends Component {
                                   </tr>
                                   <tr>
                                     <td colspan="4">
-                                      <Button color="success" size="lg" block>
+                                      <Button
+                                        color="success"
+                                        size="lg"
+                                        block
+                                        onClick={this.onClickPrintInvoice}
+                                        disabled={this.state.enablePurchase}
+                                      >
                                         <i class="fa fa-print" />
                                       </Button>
                                     </td>
@@ -744,15 +866,19 @@ Billing.PropTypes = {
   getItemsProducts: PropTypes.func.isRequired,
   deleteItem: PropTypes.func.isRequired,
   updateItem: PropTypes.func.isRequired,
+  addInvoice: PropTypes.func.isRequired,
+  getInvoices: PropTypes.func.isRequired,
   item: PropTypes.object.isRequired,
   category: PropTypes.object.isRequired,
-  product: PropTypes.object.isRequired
+  product: PropTypes.object.isRequired,
+  invoice: PropTypes.object.isRequired
 };
 
 const mapStateToProps = state => ({
   item: state.item,
   category: state.category,
-  product: state.product
+  product: state.product,
+  invoice: state.invoice
 });
 
 export default connect(
@@ -763,6 +889,8 @@ export default connect(
     addItem,
     getItemsProducts,
     updateItem,
-    deleteItem
+    deleteItem,
+    addInvoice,
+    getInvoices
   }
 )(Billing);
