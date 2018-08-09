@@ -1,37 +1,22 @@
 import React, { Component } from "react";
 import {
-  Badge,
   Button,
-  ButtonDropdown,
   Card,
   CardBody,
-  CardFooter,
   CardHeader,
   Col,
-  Collapse,
-  DropdownItem,
-  DropdownMenu,
-  DropdownToggle,
   Fade,
   Form,
   FormGroup,
-  FormText,
-  FormFeedback,
   Input,
-  InputGroup,
-  InputGroupAddon,
-  InputGroupText,
   Label,
   Row,
-  Container,
-  Pagination,
-  PaginationItem,
-  PaginationLink,
-  Table,
   Modal,
   ModalHeader,
   ModalBody,
-  ModalFooter
+  ModalFooter,
+  Table,
+  Badge
 } from "reactstrap";
 import { connect } from "react-redux";
 import {
@@ -42,6 +27,9 @@ import {
 } from "../../actions/presentationAction";
 import PropTypes from "prop-types";
 import { presentation } from "../../actions/types";
+import { getItemsProducts } from "../../actions/productAction";
+import { products } from "../../actions/types";
+import html from "react-inner-html";
 
 class Presentation extends Component {
   constructor(props) {
@@ -56,15 +44,22 @@ class Presentation extends Component {
       quantity: 0,
       update: false,
       modal: false,
-      _id: ""
+      classModal: "",
+      headerModal: "",
+      message: "",
+      buttons: ""
     };
     this.onCancelClick = this.onCancelClick.bind(this);
     this.onDeleteClick = this.onDeleteClick.bind(this);
     this.onEditClick = this.onEditClick.bind(this);
+    this.cellButtons = this.cellButtons.bind(this);
+    this.toggleModal = this.toggleModal.bind(this);
+    this.onClickShowProducts = this.onClickShowProducts.bind(this);
   }
 
   componentDidMount() {
     this.props.getItemsPresentations(presentation);
+    this.props.getItemsProducts(products);
   }
 
   toggle() {
@@ -83,6 +78,17 @@ class Presentation extends Component {
 
   onSubmit = e => {
     e.preventDefault();
+    if (this.state.name === "") {
+      this.configModal(
+        "modal-danger ",
+        "Presentación",
+        "Debe ingresar la presentación a crear",
+        <Button color="primary" onClick={this.toggleModal}>
+          Aceptar
+        </Button>
+      );
+      return;
+    }
 
     const newItem = {
       name: this.state.name,
@@ -116,20 +122,129 @@ class Presentation extends Component {
     this.setState({ quantity: 0 });
   }
 
-  onDeleteClick() {
+  onDeleteClick(_id) {
     this.setState({ modal: !this.state.modal });
-    this.props.deleteItem(this.state._id, presentation);
+    this.props.deleteItem(_id, presentation);
   }
 
   onShowModalClick(_id) {
+    this.configModal(
+      "modal-warning ",
+      "Presentación",
+      "Desea elimnar esta presentación",
+      <div>
+        <Button color="danger" onClick={this.onDeleteClick.bind(this, _id)}>
+          Sí
+        </Button>
+        {"  "}
+        <Button color="primary" onClick={this.toggleModal}>
+          No
+        </Button>
+      </div>
+    );
+  }
+
+  cellButtons(cell, row, enumObject, rowIndex) {
+    return (
+      <div>
+        <Button
+          onClick={this.onEditClick.bind(this, row._id)}
+          size="sm"
+          color="primary"
+          tootip="Editar"
+        >
+          <i className="fa fa-edit" />
+        </Button>
+        {"  "}
+        <Button
+          onClick={this.onShowModalClick.bind(this, row._id)}
+          size="sm"
+          color="danger"
+          tooltip="Eliminar"
+          disabled={
+            this.props.product.filter(x => x.presentation._id === row._id)
+              .length > 0
+              ? true
+              : false
+          }
+        >
+          <i className="fa icon-trash" />
+        </Button>
+        {"  "}
+        <Button
+          onClick={this.onClickShowProducts.bind(this, row._id)}
+          size="sm"
+          color="primary"
+          tootip="Productos"
+          disabled={
+            this.props.product.filter(x => x.presentation._id === row._id)
+              .length > 0
+              ? false
+              : true
+          }
+        >
+          <i className="fa fa-cubes" />
+        </Button>
+      </div>
+    );
+  }
+  toggleModal() {
     this.setState({ modal: !this.state.modal });
-    this.setState({ _id: _id });
+  }
+
+  configModal = (style, title, message, Button) => {
+    this.setState({ classModal: style + this.props.className });
+    this.setState({ headerModal: `.:: ${title} ::.` });
+    this.setState({ message: message });
+    this.setState({ buttons: Button });
+    this.toggleModal();
+  };
+
+  onClickShowProducts(_id) {
+    let rows = [];
+    const { items } = this.props.item;
+    this.props.product.forEach(element => {
+      if (element.presentation._id === _id && element.enable) {
+        rows.push(
+          `<tr>
+            <td><li>${element.name} </li></td>
+            <td align="center">${element.ActualAmount}</td>
+          </tr>`
+        );
+      }
+    });
+
+    this.configModal(
+      "modal-primary ",
+      `Porductos x Presentación`,
+      `<div>
+        <Table>
+          <thead>
+            <tr>
+              <th>${items.find(x => x._id === _id).name} x ${
+        items.find(x => x._id === _id).quantity
+      }</th>
+        <th>Disponible</th>
+            </tr>
+          </thead>
+          <tbody>` +
+        rows.join("") +
+        `</tbody>
+        </Table>
+      </div>`,
+      <Button color="primary" onClick={this.toggleModal}>
+        Aceptar
+      </Button>
+    );
   }
 
   render() {
     const { items } = this.props.item;
     let button;
     let buttonCancel;
+    const ReactBsTable = require("react-bootstrap-table");
+    const BootstrapTable = ReactBsTable.BootstrapTable;
+    const TableHeaderColumn = ReactBsTable.TableHeaderColumn;
     if (this.state.update) {
       button = (
         <Button type="submit" size="sm" color="success">
@@ -153,17 +268,18 @@ class Presentation extends Component {
     return (
       <div className="animated fadeIn">
         <Modal
+          size="lg"
           isOpen={this.state.modal}
-          toggle={this.toggle}
-          className={this.props.className}
+          toggle={this.toggleModal}
+          className={this.state.classModal}
         >
-          <ModalHeader toggle={this.toggle}>?</ModalHeader>
-          <ModalBody>Desea eliminar el registro?</ModalBody>
-          <ModalFooter>
-            <Button color="primary" onClick={this.onDeleteClick}>
-              Aceptar
-            </Button>{" "}
-          </ModalFooter>
+          <ModalHeader toggle={this.toggleModal}>
+            <div {...html(this.state.headerModal)} />
+          </ModalHeader>
+          <ModalBody>
+            <div {...html(this.state.message)} />
+          </ModalBody>
+          <ModalFooter>{this.state.buttons}</ModalFooter>
         </Modal>
         <Row>
           <Col xs="12" sm="4">
@@ -173,48 +289,38 @@ class Presentation extends Component {
                   <i className="fa icon-settings" />
                   <strong>Presentación de Productos</strong>
                 </CardHeader>
-                <Collapse isOpen={this.state.collapse} id="collapseExample">
-                  <CardBody>
-                    <Form className="was-validated" onSubmit={this.onSubmit}>
-                      <FormGroup>
-                        <Label htmlFor="name">
-                          <strong>Tipo Presentación</strong>
-                          <small> (Unidad, Caja, Paca, etc..)</small>
-                        </Label>
-                        <Input
-                          type="text"
-                          id="namePresentation"
-                          name="name"
-                          required
-                          onChange={this.onChange}
-                          className="form-control-warning"
-                          value={this.state.name}
-                        />
-                        <FormFeedback className="help-block">
-                          Ingrese un tipo de presentación
-                        </FormFeedback>
-                      </FormGroup>
-                      <FormGroup>
-                        <Label htmlFor="name">
-                          <strong>Cantidad X Presentación</strong>
-                        </Label>
-                        <Input
-                          type="number"
-                          name="quantity"
-                          id="quantityPresentation"
-                          required
-                          onChange={this.onChange}
-                          className="form-control-warning"
-                          value={this.state.quantity}
-                        />
-                        <FormFeedback className="help-block">
-                          Ingrese una cantidad para la presentación
-                        </FormFeedback>
-                      </FormGroup>
-                      {button} {buttonCancel}
-                    </Form>
-                  </CardBody>
-                </Collapse>
+
+                <CardBody>
+                  <Form onSubmit={this.onSubmit}>
+                    <FormGroup>
+                      <Label htmlFor="name">
+                        <strong>Tipo Presentación</strong>
+                        <small> (Unidad, Caja, Paca, etc..)</small>
+                      </Label>
+                      <Input
+                        type="text"
+                        id="namePresentation"
+                        name="name"
+                        onChange={this.onChange}
+                        value={this.state.name}
+                      />
+                    </FormGroup>
+                    <FormGroup>
+                      <Label htmlFor="name">
+                        <strong>Cantidad X Presentación</strong>
+                      </Label>
+                      <Input
+                        type="number"
+                        name="quantity"
+                        id="quantityPresentation"
+                        onChange={this.onChange}
+                        value={this.state.quantity}
+                        min="0"
+                      />
+                    </FormGroup>
+                    {button} {buttonCancel}
+                  </Form>
+                </CardBody>
               </Card>
             </Fade>
           </Col>
@@ -225,65 +331,31 @@ class Presentation extends Component {
                 <strong>Tabla Presentacion</strong>
               </CardHeader>
               <CardBody>
-                <Table responsive striped>
-                  <thead>
-                    <tr>
-                      <th>Presentacion</th>
-                      <th>Cantidad x Presentacion</th>
-                      <th>Opciones</th>
-                    </tr>
-                  </thead>
-                  {items.map(({ _id, name, quantity }) => (
-                    <tbody key={_id}>
-                      <tr>
-                        <td>{name}</td>
-                        <td>{quantity}</td>
-                        <td>
-                          <Button
-                            onClick={this.onEditClick.bind(this, _id)}
-                            size="sm"
-                            color="primary"
-                            tootip="Editar"
-                          >
-                            <i className="fa fa-edit" />
-                          </Button>{" "}
-                          <Button
-                            onClick={this.onShowModalClick.bind(this, _id)}
-                            size="sm"
-                            color="danger"
-                            tooltip="Eliminar"
-                          >
-                            <i className="fa icon-trash" />
-                          </Button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  ))}
-                </Table>
-                <Pagination>
-                  <PaginationItem disabled>
-                    <PaginationLink previous tag="button">
-                      Prev
-                    </PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem active>
-                    <PaginationLink tag="button">1</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink tag="button">2</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink tag="button">3</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink tag="button">4</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink next tag="button">
-                      Next
-                    </PaginationLink>
-                  </PaginationItem>
-                </Pagination>
+                <BootstrapTable data={items} striped hover pagination>
+                  <TableHeaderColumn isKey dataField="_id" hidden>
+                    Product ID
+                  </TableHeaderColumn>
+                  <TableHeaderColumn
+                    dataField="name"
+                    filter={{ type: "TextFilter", delay: 1000 }}
+                    dataSort={true}
+                  >
+                    Presentación
+                  </TableHeaderColumn>
+                  <TableHeaderColumn
+                    dataField="quantity"
+                    dataAlign="center"
+                    dataSort={true}
+                  >
+                    Cantidad
+                  </TableHeaderColumn>
+                  <TableHeaderColumn
+                    dataField="buttons"
+                    dataFormat={this.cellButtons.bind(this)}
+                    width="150"
+                    dataAlign="center"
+                  />
+                </BootstrapTable>
               </CardBody>
             </Card>
           </Col>
@@ -293,17 +365,20 @@ class Presentation extends Component {
   }
 }
 
-Presentation.PropTypes = {
+Presentation.propTypes = {
   getItemsPresentations: PropTypes.func.isRequired,
-  addItems: PropTypes.func.isRequired,
-  item: PropTypes.object.isRequired
+  addItem: PropTypes.func.isRequired,
+  item: PropTypes.object.isRequired,
+  getItemsProducts: PropTypes.func.isRequired,
+  product: PropTypes.array.isRequired
 };
 
 const mapStateToProps = state => ({
-  item: state.item
+  item: state.item,
+  product: state.product.items
 });
 
 export default connect(
   mapStateToProps,
-  { getItemsPresentations, addItem, deleteItem, updateItem }
+  { getItemsPresentations, addItem, deleteItem, updateItem, getItemsProducts }
 )(Presentation);

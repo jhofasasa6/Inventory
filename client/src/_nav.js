@@ -21,13 +21,18 @@ export default {
         },
         {
           name: "Salidas",
-          url: "/Inventory/output",
+          url: "/Inventory",
           icon: "icon-logout",
           children: [
             {
               name: "     Facturacion",
               url: "/Inventory/billing",
               icon: "fa fa-shopping-cart"
+            },
+            {
+              name: "Historico Facturacion",
+              url: "/Inventory/invoices",
+              icon: "fa fa-money"
             }
           ]
         }
@@ -52,6 +57,18 @@ export default {
           name: "Productos",
           url: "/Products/AddProduct",
           icon: "icon-social-dropbox"
+        }
+      ]
+    },
+    {
+      name: "Clientes",
+      url: "/customer",
+      icon: "fa fa-user",
+      children: [
+        {
+          name: "   Clientes",
+          url: "/customer/customer",
+          icon: "fa fa-user-plus"
         }
       ]
     },

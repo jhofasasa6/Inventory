@@ -13,6 +13,9 @@ import 'simple-line-icons/css/simple-line-icons.css';
 // Import Main styles for this application
 import './scss/style.css'
 
+import '../node_modules/react-bootstrap-table/dist/react-bootstrap-table-all.min.css';
+
+
 // Containers
 import { DefaultLayout } from './containers';
 // Pages

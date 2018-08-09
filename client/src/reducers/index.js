@@ -3,6 +3,7 @@ import presentationReducer from "./presentationReducer";
 import categoryReducer from "./categoryReducer";
 import productReducer from "./productReducer";
 import inoviceReducer from "./invoiceReducer";
+import customerReducer from "./customerReducer";
 import auth from "./auth";
 
 export default combineReducers({
@@ -10,5 +11,6 @@ export default combineReducers({
   auth: auth,
   category: categoryReducer,
   product: productReducer,
-  invoice: inoviceReducer
+  invoice: inoviceReducer,
+  customer: customerReducer
 });

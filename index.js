@@ -7,6 +7,7 @@ const categories = require("./routes/api/categories");
 const users = require("./routes/api/users");
 const products = require("./routes/api/products");
 const invoices = require("./routes/api/invoices");
+const customer = require("./routes/api/customer");
 
 const app = express();
 app.use(bodyParser.json());
@@ -25,6 +26,7 @@ app.use("/api/categories", categories);
 app.use("/api/users", users);
 app.use("/api/products", products);
 app.use("/api/invoices", invoices);
+app.use("/api/customer", customer);
 
 const port = process.env.PORT || 5000;
 

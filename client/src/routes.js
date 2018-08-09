@@ -207,6 +207,16 @@ const Billing = Loadable({
   loading: Loading
 });
 
+const Customer = Loadable({
+  loader: () => import("./views/customer/customer"),
+  loading: Loading
+});
+
+const Inovoices = Loadable({
+  loader: () => import("./views/Inventory/invoices"),
+  loading: Loading
+});
+
 // https://github.com/ReactTraining/react-router/tree/master/packages/react-router-config
 const routes = [
   { path: "/", exact: true, name: "Home", component: DefaultLayout },
@@ -300,6 +310,18 @@ const routes = [
     exact: true,
     name: "Facturación",
     component: Billing
+  },
+  {
+    path: "/customer/customer",
+    exact: true,
+    name: "Clientes",
+    component: Customer
+  },
+  {
+    path: "/Inventory/invoices",
+    exact: true,
+    name: "Historico Facturación",
+    component: Inovoices
   }
 ];
 

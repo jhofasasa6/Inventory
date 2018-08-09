@@ -13,7 +13,7 @@ router.post("/", (req, res) => {
   console.log(req.body.products);
   let newInvoices = new Invoices({
     date: req.body.date,
-    idCliente: req.body.idClient,
+    idClient: req.body.idClient,
     products: req.body.products,
     invoiceNumber: req.body.invoiceNumber,
     totalProducts: req.body.totalProducts,
@@ -43,12 +43,6 @@ router.put("/:id", (req, resp) => {
       console.log(err);
     }
   }).then(invoices => resp.json(invoices));
-});
-
-router.delete("/:id", (req, res) => {
-  Invoices.findById(req.params.id)
-    .then(item => item.remove().then(() => res.json({ success: true })))
-    .catch(err => res.status(404).json({ success: false }));
 });
 
 module.exports = router;

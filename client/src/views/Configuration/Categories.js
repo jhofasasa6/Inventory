@@ -1,33 +1,17 @@
 import React, { Component } from "react";
 import {
-  Badge,
   Button,
-  ButtonDropdown,
   Card,
   CardBody,
-  CardFooter,
   CardHeader,
   Col,
   Collapse,
-  DropdownItem,
-  DropdownMenu,
-  DropdownToggle,
   Fade,
   Form,
   FormGroup,
-  FormText,
-  FormFeedback,
   Input,
-  InputGroup,
-  InputGroupAddon,
-  InputGroupText,
   Label,
   Row,
-  Container,
-  Pagination,
-  PaginationItem,
-  PaginationLink,
-  Table,
   Modal,
   ModalHeader,
   ModalBody,
@@ -56,11 +40,17 @@ class Categories extends Component {
       description: "",
       update: false,
       modal: false,
-      _id: ""
+      _id: "",
+      classModal: "",
+      headerModal: "",
+      message: "",
+      buttons: ""
     };
     this.onCancelClick = this.onCancelClick.bind(this);
     this.onDeleteClick = this.onDeleteClick.bind(this);
     this.onEditClick = this.onEditClick.bind(this);
+    this.toggleModal = this.toggleModal.bind(this);
+    this.cellButtons = this.cellButtons.bind(this);
   }
 
   componentDidMount() {
@@ -72,17 +62,41 @@ class Categories extends Component {
     this.setState({ modal: !this.state.modal });
   }
 
+  toggleModal() {
+    this.setState({ modal: !this.state.modal });
+  }
+
   toggleFade() {
     this.setState(prevState => {
       return { fadeIn: !prevState };
     });
   }
+
   onChange = e => {
     this.setState({ [e.target.name]: e.target.value });
   };
 
+  configModal = (style, title, message, Button) => {
+    this.setState({ classModal: style + this.props.className });
+    this.setState({ headerModal: `.:: ${title} ::.` });
+    this.setState({ message: message });
+    this.setState({ buttons: Button });
+    this.toggleModal();
+  };
+
   onSubmit = e => {
     e.preventDefault();
+    if (this.state.name === "") {
+      this.configModal(
+        "modal-danger ",
+        "Categorias",
+        "Debe ingresar la Categoria a crear",
+        <Button color="primary" onClick={this.toggleModal}>
+          Aceptar
+        </Button>
+      );
+      return;
+    }
 
     const newItem = {
       name: this.state.name,
@@ -116,20 +130,57 @@ class Categories extends Component {
     this.setState({ description: "" });
   }
 
-  onDeleteClick() {
+  onDeleteClick(_id) {
     this.setState({ modal: !this.state.modal });
-    this.props.deleteItem(this.state._id, categories);
+    this.props.deleteItem(_id, categories);
   }
 
   onShowModalClick(_id) {
-    this.setState({ modal: !this.state.modal });
-    this.setState({ _id: _id });
+    this.configModal(
+      "modal-warning ",
+      "Presentación",
+      "Desea eliminar esta categoria",
+      <div>
+        <Button color="danger" onClick={this.onDeleteClick.bind(this, _id)}>
+          Sí
+        </Button>
+        {"  "}
+        <Button color="primary" onClick={this.toggleModal}>
+          No
+        </Button>
+      </div>
+    );
+  }
+  cellButtons(cell, row, enumObject, rowIndex) {
+    return (
+      <div>
+        <Button
+          onClick={this.onEditClick.bind(this, row._id)}
+          size="sm"
+          color="primary"
+          tootip="Editar"
+        >
+          <i className="fa fa-edit" />
+        </Button>{" "}
+        <Button
+          onClick={this.onShowModalClick.bind(this, row._id)}
+          size="sm"
+          color="danger"
+          tooltip="Eliminar"
+        >
+          <i className="fa icon-trash" />
+        </Button>
+      </div>
+    );
   }
 
   render() {
     const { items } = this.props.item;
     let button;
     let buttonCancel;
+    const ReactBsTable = require("react-bootstrap-table");
+    const BootstrapTable = ReactBsTable.BootstrapTable;
+    const TableHeaderColumn = ReactBsTable.TableHeaderColumn;
     if (this.state.update) {
       button = (
         <Button type="submit" size="sm" color="success">
@@ -153,17 +204,16 @@ class Categories extends Component {
     return (
       <div className="animated fadeIn">
         <Modal
+          size="lg"
           isOpen={this.state.modal}
-          toggle={this.toggle}
-          className={this.props.className}
+          toggle={this.toggleModal}
+          className={this.state.classModal}
         >
-          <ModalHeader toggle={this.toggle}>?</ModalHeader>
-          <ModalBody>Desea eliminar el registro?</ModalBody>
-          <ModalFooter>
-            <Button color="primary" onClick={this.onDeleteClick}>
-              Aceptar
-            </Button>{" "}
-          </ModalFooter>
+          <ModalHeader toggle={this.toggleModal}>
+            {this.state.headerModal}
+          </ModalHeader>
+          <ModalBody>{this.state.message}</ModalBody>
+          <ModalFooter>{this.state.buttons}</ModalFooter>
         </Modal>
         <Row>
           <Col xs="12" sm="4">
@@ -175,7 +225,7 @@ class Categories extends Component {
                 </CardHeader>
                 <Collapse isOpen={this.state.collapse} id="collapseExample">
                   <CardBody>
-                    <Form className="was-validated" onSubmit={this.onSubmit}>
+                    <Form onSubmit={this.onSubmit}>
                       <FormGroup>
                         <Label htmlFor="name">
                           <strong>Tipo Categoria</strong>
@@ -184,14 +234,10 @@ class Categories extends Component {
                           type="text"
                           id="name"
                           name="name"
-                          required
                           onChange={this.onChange}
                           className="form-control-warning"
                           value={this.state.name}
                         />
-                        <FormFeedback className="help-block">
-                          Ingrese un tipo de Categoria
-                        </FormFeedback>
                       </FormGroup>
                       <FormGroup>
                         <Label htmlFor="name">
@@ -220,65 +266,31 @@ class Categories extends Component {
                 <strong>Tabla Categorias</strong>
               </CardHeader>
               <CardBody>
-                <Table responsive striped>
-                  <thead>
-                    <tr>
-                      <th>Categoria</th>
-                      <th>Descripción</th>
-                      <th>Opciones</th>
-                    </tr>
-                  </thead>
-                  {items.map(({ _id, name, description }) => (
-                    <tbody key={_id}>
-                      <tr>
-                        <td>{name}</td>
-                        <td>{description}</td>
-                        <td>
-                          <Button
-                            onClick={this.onEditClick.bind(this, _id)}
-                            size="sm"
-                            color="primary"
-                            tootip="Editar"
-                          >
-                            <i className="fa fa-edit" />
-                          </Button>{" "}
-                          <Button
-                            onClick={this.onShowModalClick.bind(this, _id)}
-                            size="sm"
-                            color="danger"
-                            tooltip="Eliminar"
-                          >
-                            <i className="fa icon-trash" />
-                          </Button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  ))}
-                </Table>
-                <Pagination>
-                  <PaginationItem disabled>
-                    <PaginationLink previous tag="button">
-                      Prev
-                    </PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem active>
-                    <PaginationLink tag="button">1</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink tag="button">2</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink tag="button">3</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink tag="button">4</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink next tag="button">
-                      Next
-                    </PaginationLink>
-                  </PaginationItem>
-                </Pagination>
+                <BootstrapTable data={items} striped hover pagination>
+                  <TableHeaderColumn isKey dataField="_id" hidden>
+                    Product ID
+                  </TableHeaderColumn>
+                  <TableHeaderColumn
+                    dataField="name"
+                    filter={{ type: "TextFilter", delay: 1000 }}
+                    dataSort={true}
+                  >
+                    Categoria
+                  </TableHeaderColumn>
+                  <TableHeaderColumn
+                    dataField="description"
+                    dataAlign="center"
+                    dataSort={true}
+                  >
+                    Descripción
+                  </TableHeaderColumn>
+                  <TableHeaderColumn
+                    dataField="buttons"
+                    dataFormat={this.cellButtons.bind(this)}
+                    width="150"
+                    dataAlign="center"
+                  />
+                </BootstrapTable>
               </CardBody>
             </Card>
           </Col>
@@ -288,9 +300,9 @@ class Categories extends Component {
   }
 }
 
-Categories.PropTypes = {
+Categories.propTypes = {
   getItemsCategories: PropTypes.func.isRequired,
-  addItems: PropTypes.func.isRequired,
+  addItem: PropTypes.func.isRequired,
   item: PropTypes.object.isRequired
 };
 
