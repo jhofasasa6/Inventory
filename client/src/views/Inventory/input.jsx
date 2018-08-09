@@ -696,7 +696,7 @@ class InputProducts extends Component {
                         <FormGroup row className="my-0">
                           <Col xs="1">
                             <FormGroup>
-                              <Label htmlFor="Product">Cantidad Actual</Label>
+                              <Label htmlFor="Product">Disponible</Label>
                               <Input
                                 type="text"
                                 id="disabled-input"
@@ -706,7 +706,7 @@ class InputProducts extends Component {
                               />
                             </FormGroup>
                           </Col>
-                          <Col xs="1">
+                          <Col xs="2">
                             <FormGroup>
                               <Label htmlFor="Product">SKU</Label>
                               <Input
@@ -750,7 +750,7 @@ class InputProducts extends Component {
                               />
                             </FormGroup>
                           </Col>
-                          <Col xs="5">
+                          <Col xs="4">
                             <FormGroup>
                               <Label htmlFor="postal-code">
                                 Descripción del Ingreso{" "}
@@ -798,6 +798,7 @@ class InputProducts extends Component {
                             color={"danger"}
                             id="lookOutputs"
                             onChange={this.onlookOutputs}
+                            label
                           />
                         </a>
                       </Col>

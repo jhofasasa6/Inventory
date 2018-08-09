@@ -310,7 +310,7 @@ class AddProduct extends Component {
                                 <InputGroup className="input-prepend">
                                   <InputGroupAddon addonType="prepend">
                                     <InputGroupText>
-                                      <i class="fa fa-barcode" />
+                                      <i className="fa fa-barcode" />
                                     </InputGroupText>
                                   </InputGroupAddon>
                                   <Input
@@ -566,39 +566,13 @@ class AddProduct extends Component {
                             </Button>
                           </td>
                           <td>
-                            {!enable ? <i class="fa fa-lock fa-lg" /> : ""}
+                            {!enable ? <i className="fa fa-lock fa-lg" /> : ""}
                           </td>
                         </tr>
                       )
                     )}
                   </tbody>
                 </Table>
-                <nav>
-                  <Pagination>
-                    <PaginationItem>
-                      <PaginationLink previous tag="button">
-                        Prev
-                      </PaginationLink>
-                    </PaginationItem>
-                    <PaginationItem active>
-                      <PaginationLink tag="button">1</PaginationLink>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <PaginationLink tag="button">2</PaginationLink>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <PaginationLink tag="button">3</PaginationLink>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <PaginationLink tag="button">4</PaginationLink>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <PaginationLink next tag="button">
-                        Next
-                      </PaginationLink>
-                    </PaginationItem>
-                  </Pagination>
-                </nav>
               </CardBody>
             </Card>
           </Col>
@@ -608,8 +582,7 @@ class AddProduct extends Component {
   }
 }
 
-AddProduct.PropTypes = {
-  getItems: PropTypes.func.isRequired,
+AddProduct.propTypes = {
   addItem: PropTypes.func.isRequired,
   getItemsProducts: PropTypes.func.isRequired,
   deleteItem: PropTypes.func.isRequired,

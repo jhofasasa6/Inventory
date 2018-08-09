@@ -15,7 +15,8 @@ import {
   Modal,
   ModalHeader,
   ModalBody,
-  ModalFooter
+  ModalFooter,
+  Badge
 } from "reactstrap";
 import { connect } from "react-redux";
 import {
@@ -26,6 +27,9 @@ import {
 } from "../../actions/categoryAction";
 import PropTypes from "prop-types";
 import { categories } from "../../actions/types";
+import { getItemsProducts } from "../../actions/productAction";
+import { products } from "../../actions/types";
+import html from "react-inner-html";
 
 class Categories extends Component {
   constructor(props) {
@@ -51,10 +55,12 @@ class Categories extends Component {
     this.onEditClick = this.onEditClick.bind(this);
     this.toggleModal = this.toggleModal.bind(this);
     this.cellButtons = this.cellButtons.bind(this);
+    this.onClickShowProducts = this.onClickShowProducts.bind(this);
   }
 
   componentDidMount() {
     this.props.getItemsCategories(categories);
+    this.props.getItemsProducts(products);
   }
 
   toggle() {
@@ -170,10 +176,61 @@ class Categories extends Component {
         >
           <i className="fa icon-trash" />
         </Button>
+        {"  "}
+        <Button
+          onClick={this.onClickShowProducts.bind(this, row._id)}
+          size="sm"
+          color="primary"
+          tootip="Productos"
+          disabled={
+            this.props.product.filter(x => x.category._id === row._id).length >
+            0
+              ? false
+              : true
+          }
+        >
+          <i className="fa fa-cubes" />
+        </Button>
       </div>
     );
   }
+  onClickShowProducts(_id) {
+    let rows = [];
+    const { items } = this.props.item;
+    this.props.product.forEach(element => {
+      if (element.category._id === _id && element.enable) {
+        rows.push(
+          `<tr>
+            <td><li>${element.name} - ${element.presentation.name} x ${
+            element.presentation.quantity
+          } </li></td>
+            <td align="center">${element.ActualAmount}</td>
+          </tr>`
+        );
+      }
+    });
 
+    this.configModal(
+      "modal-primary ",
+      `Porductos x Presentación`,
+      `<div>
+        <Table>
+          <thead>
+            <tr>
+              <th>${items.find(x => x._id === _id).name} </th>
+        <th>Disponible</th>
+            </tr>
+          </thead>
+          <tbody>` +
+        rows.join("") +
+        `</tbody>
+        </Table>
+      </div>`,
+      <Button color="primary" onClick={this.toggleModal}>
+        Aceptar
+      </Button>
+    );
+  }
   render() {
     const { items } = this.props.item;
     let button;
@@ -210,9 +267,11 @@ class Categories extends Component {
           className={this.state.classModal}
         >
           <ModalHeader toggle={this.toggleModal}>
-            {this.state.headerModal}
+            <div {...html(this.state.headerModal)} />
           </ModalHeader>
-          <ModalBody>{this.state.message}</ModalBody>
+          <ModalBody>
+            <div {...html(this.state.message)} />
+          </ModalBody>
           <ModalFooter>{this.state.buttons}</ModalFooter>
         </Modal>
         <Row>
@@ -263,7 +322,7 @@ class Categories extends Component {
             <Card>
               <CardHeader>
                 <i className="fa icon-tag" />
-                <strong>Tabla Categorias</strong>
+                <strong>Tabla Categorias</strong>{" "}<Badge color="success" className="float-right">{items.length}</Badge>
               </CardHeader>
               <CardBody>
                 <BootstrapTable data={items} striped hover pagination>
@@ -303,14 +362,17 @@ class Categories extends Component {
 Categories.propTypes = {
   getItemsCategories: PropTypes.func.isRequired,
   addItem: PropTypes.func.isRequired,
-  item: PropTypes.object.isRequired
+  item: PropTypes.object.isRequired,
+  getItemsProducts: PropTypes.func.isRequired,
+  product: PropTypes.array.isRequired
 };
 
 const mapStateToProps = state => ({
-  item: state.category
+  item: state.category,
+  product: state.product.items
 });
 
 export default connect(
   mapStateToProps,
-  { getItemsCategories, addItem, deleteItem, updateItem }
+  { getItemsCategories, addItem, deleteItem, updateItem, getItemsProducts }
 )(Categories);

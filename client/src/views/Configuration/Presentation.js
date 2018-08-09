@@ -15,7 +15,6 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Table,
   Badge
 } from "reactstrap";
 import { connect } from "react-redux";
@@ -328,7 +327,10 @@ class Presentation extends Component {
             <Card>
               <CardHeader>
                 <i className="fa icon-social-dropbox" />
-                <strong>Tabla Presentacion</strong>
+                <strong>Tabla Presentacion</strong>{" "}
+                <Badge color="success" className="float-right">
+                  {items.length}
+                </Badge>
               </CardHeader>
               <CardBody>
                 <BootstrapTable data={items} striped hover pagination>
